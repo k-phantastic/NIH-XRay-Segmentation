@@ -1,5 +1,22 @@
-Data_Entry_2017.csv
+# --- DATA & LARGE FILES ---
+images/
+images_*/
+data/*.png
+data/*.jpg
+*.zip
+
+# Ignore all CSVs EXCEPT the ones we need for the code to run
+*.csv
+!data/Data_Entry_2017.csv
+
+# --- SYSTEM & IDE ---
 .DS_Store
-preliminary_modeling.ipynb
-/images_001
-ChestX-Ray8.csv
+.ipynb_checkpoints/
+__pycache__/
+
+# --- MODELS & ENV ---
+*.pth
+*.pth.tar
+vh/
+env/
+.env
