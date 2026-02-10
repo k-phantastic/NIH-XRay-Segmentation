@@ -21,3 +21,4 @@ vh/
 env/
 .env
 TeamGrades-Group18.txt
+best_resnet50_nih.pt

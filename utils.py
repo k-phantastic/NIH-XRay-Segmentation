@@ -94,18 +94,28 @@ def load_checkpoint(checkpoint_path, model, optimizer):
 def calculate_metrics(all_labels, all_preds, class_names):
     """Calculates Mean AUC-ROC and Per-Class AUC-ROC."""
     metrics = {}
-    try:
-        # Macro average for overall performance
-        metrics['Mean_AUC'] = roc_auc_score(all_labels, all_preds, average='macro')
-        
-        for i, name in enumerate(class_names):
-            try:
-                metrics[f'AUC_{name}'] = roc_auc_score(all_labels[:, i], all_preds[:, i])
-            except ValueError:
-                metrics[f'AUC_{name}'] = 0.0 # Handles cases with no positive samples in subset
-    except Exception as e:
-        print(f"Metric calculation error: {e}")
-        return None
+    valid_aucs = []  # Only store valid AUCs
+    
+    for i, name in enumerate(class_names):
+        try:
+            # Check if class has both positive and negative samples
+            if len(np.unique(all_labels[:, i])) > 1:
+                auc = roc_auc_score(all_labels[:, i], all_preds[:, i])
+                metrics[f'AUC_{name}'] = auc
+                valid_aucs.append(auc)
+            else:
+                metrics[f'AUC_{name}'] = None  # Mark as unavailable
+        except ValueError as e:
+            metrics[f'AUC_{name}'] = None
+    
+    # Mean AUC only over valid classes
+    if valid_aucs:
+        metrics['Mean_AUC'] = np.mean(valid_aucs)
+        metrics['Num_Valid_Classes'] = len(valid_aucs)
+    else:
+        metrics['Mean_AUC'] = 0.0
+        metrics['Num_Valid_Classes'] = 0
+    
     return metrics
 
 # --- 4. EXPLAINABILITY (Grad-CAM) ---
