@@ -21,4 +21,7 @@ vh/
 env/
 .env
 TeamGrades-Group18.txt
+
+# --- Used for HuggingFace Spaces ---
 best_resnet50_nih.pt
+classes.json

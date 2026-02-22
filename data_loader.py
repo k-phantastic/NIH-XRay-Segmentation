@@ -21,9 +21,11 @@ class LetterboxPad:
 class ApplyCLAHE:
     """Enhances local contrast for 8-bit NIH grayscale images."""
     def __init__(self, clip_limit=2.0, tile_grid_size=(8, 8)):
-        self.clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+        self.clip_limit = clip_limit
+        self.tile_grid_size = tile_grid_size
 
     def __call__(self, img):
+        self.clahe = cv2.createCLAHE(clipLimit=self.clip_limit, tileGridSize=self.tile_grid_size)
         img_np = np.array(img)
         # NIH images are usually uint8; if not, normalize them
         if img_np.dtype != np.uint8:
