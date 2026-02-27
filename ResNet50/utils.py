@@ -91,7 +91,7 @@ def get_train_val_test_split(df, train_size=0.7, val_size=0.15, random_state=42)
     print(f"    [Utils] Train-Val-Test Split Complete: ")
     print(f"    Train   ---> Images: {len(train_df)} | Unique Patients: {train_df['Patient ID'].nunique()} | Num. Classes: {train_df['Finding Labels'].nunique()}")
     print(f"    Val     ---> Images: {len(val_df)} | Unique Patients: {val_df['Patient ID'].nunique()} | Num. Classes: {val_df['Finding Labels'].nunique()}")
-    print(f"    Test    ---> Images: {len(test_df)} | Unique Patients: {test_df['Patient ID'].nunique()}")
+    print(f"    Test    ---> Images: {len(test_df)} | Unique Patients: {test_df['Patient ID'].nunique()} | Num. Classes: {test_df['Finding Labels'].nunique()}")
     
     return train_df, val_df, test_df
 
@@ -323,6 +323,7 @@ def plot_training_history(checkpoint):
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss')
     ax1.set_title('Loss vs Epoch')
+    ax1.set_xticks(total_epochs)
     ax1.legend()
     ax1.grid(alpha=0.3)
 
@@ -330,6 +331,7 @@ def plot_training_history(checkpoint):
     ax2.set_xlabel('Epoch')
     ax2.set_ylabel('AUC')
     ax2.set_title('Validation AUC vs Epoch')
+    ax2.set_xticks(total_epochs)
     ax2.legend()
     ax2.grid(alpha=0.3)
 
@@ -518,7 +520,7 @@ def visualize_gradcam(model, val_ds, train_ds, device, n_samples=5):
 
         # Panel 3 - heatmap overlaid on original image
         axes[i, 2].imshow(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
-        axes[i, 2].set_title(f"Overlay (p={pred_prob:.2f})", fontsize=9)
+        axes[i, 2].set_title(f"Overlay", fontsize=9)
         axes[i, 2].axis("off")
 
         # Panel 4 - text: top 3 predictions + ground truth

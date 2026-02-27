@@ -21,7 +21,7 @@ IMAGE_FOLDERS = [ROOT_DIR.parent / "images"] # List of folders to search
 
 CACHE_PATH = "path_cache.json" # Path to save the image path cache
 
-MODEL_SAVE_PATH = "best_resnet50.pt" # Path to save the best model checkpoint
+MODEL_SAVE_PATH = "checkpoints/best_resnet50_nih_512.pt" # Path to save the best model checkpoint
 
 
 ######################################################################
@@ -37,8 +37,8 @@ VAL_SPLIT = 0.15 # Change if working with Train/Val/Test split
 ######################################################################
 # Data Loading
 ######################################################################
-TRAIN_BATCH_SIZE = 128
-VAL_BATCH_SIZE = 128
+TRAIN_BATCH_SIZE = 32
+VAL_BATCH_SIZE = 32
 
 NUM_WORKERS = 6 
 PERSISTENT_WORKERS = True # Set to True for faster data loading after the first epoch

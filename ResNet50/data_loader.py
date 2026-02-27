@@ -212,7 +212,7 @@ class RepeatChannels:
 train_data_transforms = transforms.Compose([
     LetterboxPad(),                         # Standardization
     ApplyCLAHE(),                           # Contrast Fix
-    transforms.Resize((256, 256)),          # Common Capstone Grid size
+    transforms.Resize((512, 512)),          # Common Capstone Grid size
     transforms.RandomRotation(5),           # Data Augmentation (Overfitting fix)
 #transforms.RandomHorizontalFlip(),         # Doubling data variety ##### Might be dangerous for xrays 
     transforms.ToTensor(),                  # Normalizing to [0,1]
@@ -227,7 +227,7 @@ train_data_transforms = transforms.Compose([
 val_data_transforms = transforms.Compose([
     LetterboxPad(),
     ApplyCLAHE(),
-    transforms.Resize((256, 256)),
+    transforms.Resize((512, 512)),
     transforms.ToTensor(),
     RepeatChannels(),
     transforms.Normalize(
