@@ -151,6 +151,7 @@ class NIH8Dataset(Dataset):
 def safe_collate(batch):
     """
     Filter out None samples
+    Not currently using this in train_model.py but can be helpful if you encounter missing images or loading errors.
     """
     batch = list(filter(lambda x: x is not None, batch))
     if len(batch) == 0: return None

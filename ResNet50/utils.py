@@ -35,8 +35,8 @@ def calculate_class_weights(dataset, max_weight=10.0):
     # Map to names for the printout
     weight_dict = {dataset.classes[i]: round(class_weights[i], 4) for i in range(len(dataset.classes))}
     
-    print(f"[Utils] Class weights calculated for {len(weight_dict)} classes with range [{class_weights.min():.2f}, {class_weights.max():.2f}]")
-    print("[Utils] Identified Class Weights:")
+    print(f"    [Utils] Class weights calculated for {len(weight_dict)} classes with range [{class_weights.min():.2f}, {class_weights.max():.2f}]")
+    print("     [Utils] Identified Class Weights:")
     for i, (class_name, weight) in enumerate(weight_dict.items()):
         print(f"  {class_name}: {weight:.2f}")
     return torch.tensor(class_weights, dtype=torch.float32), weight_dict
@@ -58,11 +58,9 @@ def get_train_val_split(df, train_size=0.8, random_state=42):
     train_df = df.iloc[train_idx].reset_index(drop=True)
     val_df = df.iloc[val_idx].reset_index(drop=True)
     
-    print(f"[Utils] Train-Val Split Complete: ")
-    print(f"    Train:")
-    print(f"    Images: {len(train_df)} | Unique Patients: {train_df['Patient ID'].nunique()} | Num. Classes: {train_df['Finding Labels'].nunique()}")
-    print(f"    Val:")
-    print(f"    Images: {len(val_df)} | Unique Patients: {val_df['Patient ID'].nunique()} | Num. Classes: {val_df['Finding Labels'].nunique()}")
+    print(f"    [Utils] Train-Val Split Complete: ")
+    print(f"    Train   ---> Images: {len(train_df)} | Unique Patients: {train_df['Patient ID'].nunique()} | Num. Classes: {train_df['Finding Labels'].nunique()}")
+    print(f"    Val     ---> Images: {len(val_df)} | Unique Patients: {val_df['Patient ID'].nunique()} | Num. Classes: {val_df['Finding Labels'].nunique()}")
 
     return train_df, val_df
 
@@ -75,7 +73,7 @@ def get_train_val_test_split(df, train_size=0.7, val_size=0.15, random_state=42)
     if train_size + val_size >= 1.0:
         raise ValueError("train_size + val_size must be less than 1.0 to leave room for the test set.")
     test_size = 1.0 - train_size - val_size
-
+    print(f"[Utils] Performing Train/Val/Test split with proportions: Train={train_size}, Val={val_size}, Test={test_size}")
     # 1. Catch test set first
     gss_test = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
     train_val_idx, test_idx = next(gss_test.split(df, groups=df['Patient ID']))
@@ -90,13 +88,10 @@ def get_train_val_test_split(df, train_size=0.7, val_size=0.15, random_state=42)
     train_df = train_val_df.iloc[train_idx].reset_index(drop=True)
     val_df   = train_val_df.iloc[val_idx].reset_index(drop=True)
     
-    print(f"[Utils] Train-Val-Test Split Complete: ")
-    print(f"    Train:")
-    print(f"    Images: {len(train_df)} | Unique Patients: {train_df['Patient ID'].nunique()}")
-    print(f"    Val:")
-    print(f"    Images: {len(val_df)} | Unique Patients: {val_df['Patient ID'].nunique()}")
-    print(f"    Test:")
-    print(f"    Images: {len(test_df)} | Unique Patients: {test_df['Patient ID'].nunique()}")
+    print(f"    [Utils] Train-Val-Test Split Complete: ")
+    print(f"    Train   ---> Images: {len(train_df)} | Unique Patients: {train_df['Patient ID'].nunique()} | Num. Classes: {train_df['Finding Labels'].nunique()}")
+    print(f"    Val     ---> Images: {len(val_df)} | Unique Patients: {val_df['Patient ID'].nunique()} | Num. Classes: {val_df['Finding Labels'].nunique()}")
+    print(f"    Test    ---> Images: {len(test_df)} | Unique Patients: {test_df['Patient ID'].nunique()}")
     
     return train_df, val_df, test_df
 
@@ -118,14 +113,14 @@ def save_checkpoint(state, filename="checkpoint.pth.tar"):
     """
     Saves the current training state.
     """
-    print(f"[Utils] => Saving checkpoint: {filename} (Epoch {state['epoch']})")
+    print(f"    [Utils] => Saving checkpoint: {filename} (Epoch {state['epoch']})")
     torch.save(state, filename)
 
 def load_checkpoint(checkpoint_path, model, optimizer):
     """
     Resumes training from a saved checkpoint.
     """
-    print(f"[Utils] => Loading checkpoint: {checkpoint_path}")
+    print(f"    [Utils] => Loading checkpoint: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path)
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
@@ -143,7 +138,6 @@ def calculate_metrics(y_true, y_pred_probs, threshold=0.5):
     - y_true: Ground truth labels (N, num_classes)
     - y_pred_probs: Predicted probabilities (N, num_classes)
     - threshold: Classification threshold (default: 0.5)
-    - class_names: Optional list of class names
     
     Returns:
     - dict: Dictionary of metrics
@@ -216,7 +210,7 @@ def calculate_metrics(y_true, y_pred_probs, threshold=0.5):
             metrics['num_valid_classes'] = 0
             
     except Exception as e:
-        print(f"[Utils] AUC computation failed: {e}")
+        print(f"    [Utils] AUC computation failed: {e}")
         metrics['auc_per_class'] = np.full(y_true.shape[1], np.nan)
         metrics['auc_macro'] = 0.0
 
@@ -232,7 +226,7 @@ def calculate_metrics(y_true, y_pred_probs, threshold=0.5):
             metrics[f'{name}_macro'] = fn(y_true, y_pred, average='macro', zero_division=0)
             metrics[f'{name}_per_class'] = fn(y_true, y_pred, average=None, zero_division=0)
         except Exception as e:
-            print(f"[Utils] {name} computation failed: {e}")
+            print(f"    [Utils] {name} computation failed: {e}")
             metrics[f'{name}_per_class'] = np.zeros(y_true.shape[1])
             metrics[f'{name}_macro'] = 0.0
     try:
@@ -312,6 +306,37 @@ def print_metrics(metrics, class_names, show_invalid=True):
 # Grad-CAM, heatmap, visualization functions
 ######################################################################
 
+def plot_training_history(checkpoint):
+    """
+    Plots training and validation loss curves over epochs.
+    """
+    history = checkpoint['history']
+    best_auc = checkpoint['best_auc']
+    checkpoint_epoch = checkpoint['epoch']
+
+    total_epochs  = range(1, len(history['train_loss']) + 1)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    ax1.plot(total_epochs, history['train_loss'], label='Train Loss')
+    ax1.plot(total_epochs, history['val_loss'],   label='Val Loss')
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Loss vs Epoch')
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    ax2.plot(total_epochs, history['mean_auc'], label='Val AUC', color='green')
+    ax2.set_xlabel('Epoch')
+    ax2.set_ylabel('AUC')
+    ax2.set_title('Validation AUC vs Epoch')
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+
+    plt.suptitle(f"Training History - Best AUC: {best_auc:.4f} (Epoch {checkpoint_epoch+1})", fontsize=13)
+    plt.tight_layout()
+    plt.show()
+
 def visualize_results(batch_dict, classes, n=4):
     """
     Quickly plots a batch of images with their multi-hot labels.
@@ -329,7 +354,7 @@ def visualize_results(batch_dict, classes, n=4):
         plt.subplot(1, n, i+1)
         
         # Un-normalize for viewing
-        img = images[i].squeeze().cpu().numpy()
+        img = images[i][0].squeeze().cpu().numpy()
         plt.imshow(img, cmap='gray')
         
         # Get names of active labels
@@ -371,7 +396,7 @@ class GradCAM:
         
         heatmap = F.relu(heatmap)
         heatmap /= (torch.max(heatmap) + 1e-8)
-        
+
         return heatmap.detach().cpu().numpy()
 
 def overlay_heatmap(heatmap, original_img_np):
@@ -388,3 +413,199 @@ def overlay_heatmap(heatmap, original_img_np):
     superimposed = cv2.addWeighted(original_img_np, 0.6, heatmap_color, 0.4, 0)
 
     return superimposed
+
+def visualize_gradcam(model, val_ds, train_ds, device, n_samples=5):
+    """
+    Generates Grad-CAM heatmap visualizations for one image per pathology.
+
+    For each sample, displays four panels:
+    1. Original grayscale X-ray with ground truth labels
+    2. Raw Grad-CAM heatmap for the top predicted class
+    3. Heatmap overlaid on the original image
+    4. Top 3 predicted classes with probabilities and ground truth
+
+    Sampling logic:
+    - Tries to show one unique pathology per row (skips No Finding)
+    - Falls back to any remaining unseen pathology if fewer than n_samples found
+
+    Arguments:
+    - model:     ResNet50 with best weights already loaded (call load_checkpoint first).
+    - val_ds:    Validation NIH8Dataset to sample images from.
+    - train_ds:  Training dataset - used for class name lookup.
+    - device:    Compute device.
+    - n_samples: Number of images to visualize (default 5).
+    """
+    model.eval()
+
+    # Attach Grad-CAM to the last residual block - this layer has the best
+    target_layer = model.layer4[-1]
+    cam = GradCAM(model, target_layer)
+
+    # Sample one image per unique pathology from the validation set.
+    shown_classes = set()
+    samples       = []
+
+    # First pass - one unique pathology per sample, no 'No Finding'
+    for idx in range(len(val_ds)): 
+        sample = val_ds[idx]
+        if sample is None:
+            continue
+
+        active  = [val_ds.classes[j] for j, v in enumerate(sample["labels"]) if v == 1]
+        if not active:
+            continue
+
+        primary = active[0]
+        if primary not in shown_classes and primary != "No Finding":
+            shown_classes.add(primary)
+            samples.append(sample)
+
+        if len(samples) >= n_samples:
+            break
+
+    num_samples = len(samples)
+
+    fig, axes = plt.subplots(num_samples, 4, figsize=(20, 5 * num_samples))
+
+    # Ensure axes is always 2D even for a single sample
+    if num_samples == 1:
+        axes = axes[np.newaxis, :]
+
+    for i, sample in enumerate(samples):
+        input_tensor = sample["image"].unsqueeze(0).to(device)
+        labels       = sample["labels"]
+
+        # Forward pass - get class probabilities
+        with torch.no_grad():
+            logits = model(input_tensor)
+            probs  = torch.sigmoid(logits)[0].cpu().numpy()
+
+        # Top predicted class - used as the Grad-CAM target
+        pred_idx  = int(np.argmax(probs))
+        pred_name = train_ds.classes[pred_idx]
+        pred_prob = probs[pred_idx]
+
+        # Ground truth class names for display
+        gt_labels = [train_ds.classes[j] for j, v in enumerate(labels) if v == 1]
+
+        # Generate Grad-CAM heatmap for the top predicted class
+        heatmap = cam.generate_heatmap(input_tensor, pred_idx)
+
+        # Un-normalize the image for display.
+        img_np  = input_tensor[0, 0].cpu().numpy()
+        img_np  = (img_np - img_np.min()) / (img_np.max() - img_np.min() + 1e-8)
+        img_np  = (img_np * 255).astype(np.uint8)
+
+        overlay = overlay_heatmap(heatmap, img_np)
+
+        # Top 3 predictions for the text panel
+        top3_idx = np.argsort(probs)[::-1][:3]
+        top3_str = "\n".join([
+            f"{train_ds.classes[j]}: {probs[j]:.2f}" for j in top3_idx
+        ])
+
+        # Plot 4 panels per row (Original | Heatmap | Overlay | Top 3 Predictions)
+
+        # Panel 1 - original X-ray with ground truth
+        axes[i, 0].imshow(img_np, cmap="gray")
+        axes[i, 0].set_title(f"Ground Truth: {', '.join(gt_labels)}", fontsize=9)
+        axes[i, 0].axis("off") # Remove axes for cleaner look
+
+        # Panel 2 - raw heatmap for the top predicted class
+        axes[i, 1].imshow(heatmap, cmap="jet")
+        axes[i, 1].set_title(f"Heatmap: {pred_name}", fontsize=9)
+        axes[i, 1].axis("off")
+
+        # Panel 3 - heatmap overlaid on original image
+        axes[i, 2].imshow(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
+        axes[i, 2].set_title(f"Overlay (p={pred_prob:.2f})", fontsize=9)
+        axes[i, 2].axis("off")
+
+        # Panel 4 - text: top 3 predictions + ground truth
+        axes[i, 3].axis("off")
+        axes[i, 3].text(0.1, 0.75, "Top 3 Predictions:",
+                        fontsize=12, fontweight="bold",
+                        transform=axes[i, 3].transAxes)
+        axes[i, 3].text(0.1, 0.45, top3_str,
+                        fontsize=12, family="monospace",
+                        transform=axes[i, 3].transAxes)
+        axes[i, 3].text(0.1, 0.15, f"Ground Truth:\n{', '.join(gt_labels)}",
+                        fontsize=12, color="green",
+                        transform=axes[i, 3].transAxes)
+
+    plt.suptitle(
+        f"Grad-CAM Explainability ({num_samples} shown)",
+        fontsize=20, y=1.01
+    )
+    plt.tight_layout()
+    plt.show()
+
+    print(f"  Pathologies shown: {', '.join(sorted(shown_classes))}")
+
+def plot_roc_curves(all_labels, all_probs, classes):
+    """
+    Plots per-class ROC curves in a 3x5 grid for 15 NIH classes.
+
+    Arguments:
+    - all_labels: (N, 15) ground truth binary matrix.
+    - all_probs:  (N, 15) predicted probabilities.
+    - classes:    List of class name strings from dataset.classes
+    """
+    from sklearn.metrics import roc_curve, auc
+
+    fig, axes = plt.subplots(3, 5, figsize=(20, 12))
+    axes      = axes.flatten()
+
+    for i, name in enumerate(classes):
+        ax = axes[i]
+
+        fpr, tpr, _ = roc_curve(all_labels[:, i], all_probs[:, i])
+        roc_auc     = auc(fpr, tpr)
+        ax.plot(fpr, tpr, linewidth=2, label=f"AUC = {roc_auc:.3f}")
+        ax.fill_between(fpr, tpr, alpha=0.15) # Shade under the curve
+
+        ax.plot([0, 1], [0, 1], "k--", alpha=0.3)
+        ax.set_title(name, fontsize=10, fontweight="bold")
+        ax.set_xlim([0, 1])
+        ax.set_ylim([0, 1.05])
+        ax.legend(loc="lower right", fontsize=9) # Add legend for AUC
+        ax.set_ylabel("TPR") if i % 5 == 0 else None
+        ax.set_xlabel("FPR") if i >= 10 else None
+
+    plt.suptitle("Per-Class ROC Curves", fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+######################################################################
+# Patience Counter
+# https://medium.com/biased-algorithms/a-practical-guide-to-implementing-early-stopping-in-pytorch-for-model-training-99a7cbd46e9d
+######################################################################
+
+class EarlyStopping:
+    """
+    Stops training when validation AUC has not improved for specified epochs.
+
+    Arguments:
+    - patience: Number of epochs to wait for improvement before stopping.
+    - delta: Minimum change in validation AUC to qualify as an improvement.
+    - verbose: Whether to print a message when stopping.
+    """
+    def __init__(self, patience=5, delta=0.001, verbose=True):
+        self.patience = patience
+        self.delta = delta
+        self.verbose = verbose
+        self.best_loss = None
+        self.no_improvement_count = 0
+        self.stop_training = False
+    
+    def check_early_stop(self, val_loss):
+        if self.best_loss is None or val_loss < self.best_loss - self.delta:
+            self.best_loss = val_loss
+            self.no_improvement_count = 0
+        else:
+            self.no_improvement_count += 1
+            if self.no_improvement_count >= self.patience:
+                self.stop_training = True
+                if self.verbose:
+                    print("    [Utils] Stopping early as no improvement has been observed.")
+
