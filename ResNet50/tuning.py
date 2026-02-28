@@ -217,7 +217,7 @@ def main():
     # to avoid re-indexing the image cache every trial.
     print("\n[Optuna] Loading data...")
     df = pd.read_csv(CSV_PATH)
-    train_df, val_df, _ = get_train_val_split(df, TRAIN_SPLIT)
+    train_df, val_df = get_train_val_split(df, TRAIN_SPLIT)
 
     # Image Folders for dataset
     folders = [str(IMAGE_FOLDERS[0] / f"images_{str(i).zfill(3)}") for i in range(1, 13)]

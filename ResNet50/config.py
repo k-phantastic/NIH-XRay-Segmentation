@@ -48,9 +48,9 @@ PERSISTENT_WORKERS = True # Set to True for faster data loading after the first 
 # Model Training Parameters
 ######################################################################
 EPOCHS = 30
-LEARNING_RATE = 1.3492834268013232e-05 #5e-5 # 1e-4
-LR_LAYER4 = 7.902619549708236e-05
-WEIGHT_DECAY = 0.0007886714129990489 #1e-5
+LEARNING_RATE = 5.6115164153345e-05 #5e-5 # 1e-4
+LR_LAYER4 = 7.969454818643937e-05
+WEIGHT_DECAY = 0.000157029708840554 #1e-5
 
 
 ######################################################################
@@ -58,7 +58,7 @@ WEIGHT_DECAY = 0.0007886714129990489 #1e-5
 ######################################################################
 USE_AMP = True            # Use Automatic Mixed Precision for faster training
 GRAD_CLIP = None          # Set 0.1 for gradient clipping
-MAX_CLASS_WEIGHT = 16.742754917979838 # 10.0   # Cap class weights to prevent loss explosion
+MAX_CLASS_WEIGHT = 13.177194231349622 # 10.0   # Cap class weights to prevent loss explosion
 
 ######################################################################
 # Patience Setup
