@@ -19,7 +19,7 @@ This directory contains the setup for tuning a pre-trained ResNet50 model from t
 
 ## File Structure
 ```
-ResNet50/
+ResNet50/               (current folder)   
 ├── config.py           # All hyperparameters, file paths, and training toggles
 ├── data_loader.py      # NIH8Dataset class for the dataset, preprocessing transforms
 ├── train_model.py      # Full training loop with validation, checkpointing, and test evaluation
@@ -105,6 +105,8 @@ As referenced in `data_loader.py`, all training images follow the following:
 | 6 | `RepeatChannels` | Copies single grayscale channel to 3 identical channels for ResNet's expected input |
 | 7 | `Normalize` | ImageNet statistics (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) — compatible with pretrained weights |
 
+Note that step 4 is not applied to the test/unknown data.
+
 ---
 
 #### Full Execution
@@ -150,9 +152,11 @@ Included in `utils.py` is a setup for Grad-CAM (Gradient Class Activation Mappin
 | Pneumonia | 0.7248 | 0.0642 | 0.0636 | 0.0639 |
 | Pneumothorax | 0.8815 | 0.2656 | 0.6691 | 0.3802 |
 | **Macro Avg** | **0.8162** | **0.2450** | **0.4963** | **0.2961** |
-Overall (Exact Match) Accuracy: 0.2752
+Overall (Exact Match) Accuracy: | 0.2752
 
 ### Limitations
-**Class Imbalance** The model still suffers from the class imbalance issue despite the loss function and weights set up to remedy. 
+**Class Imbalance:** The model still suffers from the class imbalance issue despite the loss function and weights set up to remedy. 
 
-**Class Recall** Currently the threshold is set up at 0.5, to which the scope of sucess in limiting false negative is limited for many classes, it would be good to look to tune this (or tune per class) alongside providing proper disclaimers in downstream usage
+**Class Recall:** Currently the threshold is set up at 0.5, to which the scope of sucess in limiting false negative is limited for many classes, it would be good to look to tune this (or tune per class) alongside providing proper disclaimers in downstream usage
+
+**Patient Metadata:** With the current iteration, patient metadata is not included in any training. With this clinical data, it is likely that there are patterns given patient demographics that deep learning models can leverage. 
