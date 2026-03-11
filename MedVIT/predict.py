@@ -8,7 +8,7 @@ from torchvision import transforms
 
 # Internal Imports
 from model import OptimizedMedViT
-from data_loader import data_transforms
+from data_loader import get_loaders
 
 class GradCAM:
     """Generates heatmaps to visualize where the model is 'looking'."""
@@ -29,13 +29,19 @@ class GradCAM:
         self.gradients = grad_output[0]
 
     def generate_heatmap(self, input_tensor, meta_tensor, class_idx):
-        self.model.eval()
-        output = self.model(input_tensor, meta_tensor)
-        
+        # We need gradients for CAM, so we don't use torch.no_grad() here
         self.model.zero_grad()
+        
+        # Ensure input requires grad
+        input_tensor.requires_grad = True 
+        
+        output = self.model(input_tensor, meta_tensor)
         loss = output[0, class_idx]
         loss.backward()
 
+        if self.gradients is None or self.activations is None:
+            raise RuntimeError("Hooks did not capture gradients/activations. Check target_layer.")
+            
         # Global Average Pooling of the gradients
         weights = torch.mean(self.gradients, dim=(2, 3), keepdim=True)
         heatmap = torch.sum(weights * self.activations, dim=1).squeeze()
@@ -78,12 +84,12 @@ def run_inference(img_path, age, gender, view, model_path):
     heatmap = cam.generate_heatmap(input_tensor, meta_tensor, top_idx)
     
     # Overlay logic
-    img_np = np.array(raw_image.resize((224, 224)))
-    heatmap_resized = cv2.resize(heatmap, (224, 224))
+    img_np = np.array(raw_image.resize((448, 448)))
+    heatmap_resized = cv2.resize(heatmap, (448, 448))
     heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
     superimposed = cv2.addWeighted(cv2.cvtColor(img_np, cv2.COLOR_GRAY2BGR), 0.6, heatmap_color, 0.4, 0)
 
-    # 6. Plot
+    # 6. Plot and Save
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     plt.imshow(img_np, cmap='gray')
@@ -92,6 +98,11 @@ def run_inference(img_path, age, gender, view, model_path):
     plt.subplot(1, 2, 2)
     plt.imshow(superimposed)
     plt.title(f"Grad-CAM: {class_names[top_idx]}\nConf: {probs[top_idx]:.2f}")
+    
+    # Generate a filename based on the class and age
+    save_filename = f"gradcam_{class_names[top_idx]}_{age}.png"
+    plt.savefig(save_filename, bbox_inches='tight', dpi=300)
+    print(f"Result saved as {save_filename}")
     plt.show()
 
 # Example Usage:

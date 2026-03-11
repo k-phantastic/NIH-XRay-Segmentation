@@ -2,49 +2,62 @@ import torch
 from torch import amp
 from tqdm import tqdm
 import numpy as np
-from dataset import calculate_metrics 
+from torchmetrics.classification import MultilabelAUROC
 
-def train_one_epoch(model, loader, optimizer, criterion, device, scaler):
-    """
-    Trains for one epoch using Automatic Mixed Precision (AMP).
-    """
+def train_one_epoch(model, loader, optimizer, criterion, device, scaler, scheduler=None, acc_steps=1):
     model.train()
     total_loss = 0
     
-    for batch in tqdm(loader, desc="Training"):
-        # Unpack the dictionary from NIH8Dataset
+    # set_to_none=True is slightly faster than zero_grad()
+    optimizer.zero_grad(set_to_none=True)
+
+    # Use tqdm for a nice progress bar
+    pbar = tqdm(loader, desc="Training")
+    
+    for i, batch in enumerate(pbar):
+        # Move data to GPU
         images = batch['image'].to(device, non_blocking=True)
         labels = batch['labels'].to(device, non_blocking=True)
         meta = batch['meta'].to(device, non_blocking=True)
-        
-        # Zero gradients efficiently
-        optimizer.zero_grad(set_to_none=True)
-        
-        # Enable Mixed Precision
-        with amp.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
-            outputs = model(images, meta)
-            loss = criterion(outputs, labels)
 
-        # Scaler handles FP16 precision to save VRAM and increase speed on 3070
-        if scaler is not None:
-            scaler.scale(loss).backward()
+        # 1. Forward pass with Mixed Precision
+        with amp.autocast(device_type='cuda'):
+            outputs = model(images, meta)
+            # We divide by acc_steps so the gradients are averaged correctly
+            loss = criterion(outputs, labels) / acc_steps 
+
+        # 2. Backward pass (scaled for mixed precision)
+        scaler.scale(loss).backward()
+
+        # 3. Update weights only every 'acc_steps' batches
+        if (i + 1) % acc_steps == 0:
+            # Unscales gradients and calls optimizer.step()
             scaler.step(optimizer)
+            # Updates the scale for next iteration
             scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()
+            # Clear gradients for the next accumulation cycle
+            optimizer.zero_grad(set_to_none=True)
         
-        total_loss += loss.item()
+        # 4. Scheduler step
+        # IMPORTANT: Most schedulers (like OneCycleLR) expect a step per BATCH
+        if scheduler is not None:
+            scheduler.step()
+
+        # Logging: multiply back by acc_steps to show the actual loss value
+        total_loss += loss.item() * acc_steps
+        
+        # Update progress bar with current loss
+        if i % 10 == 0:
+            pbar.set_postfix({'loss': f"{loss.item() * acc_steps:.4f}"})
         
     return total_loss / len(loader)
 
 def validate(model, loader, criterion, device, class_names):
-    """
-    Evaluates the model and returns loss + per-class AUC metrics.
-    """
     model.eval()
     val_loss = 0
-    all_labels, all_preds = [], []
+    
+    # VECTORIZED METRIC: Lives on the GPU
+    metric = MultilabelAUROC(num_labels=len(class_names), average="macro").to(device)
     
     with torch.no_grad():
         for batch in tqdm(loader, desc="Validating"):
@@ -52,22 +65,18 @@ def validate(model, loader, criterion, device, class_names):
             labels = batch['labels'].to(device, non_blocking=True)
             meta = batch['meta'].to(device, non_blocking=True)
             
-            with amp.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
+            with amp.autocast(device_type='cuda'):
                 outputs = model(images, meta)
                 loss = criterion(outputs, labels)
             
             val_loss += loss.item()
             
-            # Store labels and predictions for AUC calculation
-            all_labels.append(labels.cpu().numpy())
-            # Use Sigmoid here because the loss function (BCEWithLogits) uses raw logits
-            all_preds.append(torch.sigmoid(outputs).detach().cpu().numpy())
+            # Update the metric on GPU (vectorized)
+            # We use torch.sigmoid because AUROC expects probabilities or logits
+            metric.update(outputs, labels.long())
             
-    # Combine all batches
-    all_labels = np.vstack(all_labels)
-    all_preds = np.vstack(all_preds)
+    # Compute the final Mean AUC score
+    mean_auc = metric.compute().item()
     
-    # Calculate metrics
-    metrics = calculate_metrics(all_labels, all_preds, class_names)
-    
-    return val_loss / len(loader), metrics
+    # Return in a format main.py expects
+    return val_loss / len(loader), {'Mean_AUC': mean_auc}

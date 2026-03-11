@@ -1,14 +1,44 @@
 import os
+from pyexpat import model
 import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import classification_report, roc_auc_score, precision_recall_curve, average_precision_score
+from sklearn.metrics import classification_report, roc_auc_score, precision_recall_curve, average_precision_score, roc_curve
 from torch.utils.data import DataLoader
 from data_loader import get_loaders
 from model import OptimizedMedViT
-from train import calculate_metrics
+from tqdm import tqdm
+from collections import OrderedDict
+
+def calculate_metrics(all_labels, all_preds, class_names):
+    metrics = {}
+    auc_list = []
+    best_thresholds = []
+    
+    for i, class_name in enumerate(class_names):
+        # Check if we have both positive and negative samples for this class
+        if len(np.unique(all_labels[:, i])) > 1:
+            # 1. Calculate AUC
+            auc = roc_auc_score(all_labels[:, i], all_preds[:, i])
+            metrics[f'AUC_{class_name}'] = auc
+            auc_list.append(auc)
+            
+            # 2. Find Optimal Threshold (Youden's J statistic)
+            fpr, tpr, thresholds = roc_curve(all_labels[:, i], all_preds[:, i])
+            # J = sensitivity + specificity - 1 (which is same as tpr - fpr)
+            idx = np.argmax(tpr - fpr)
+            best_thr = thresholds[idx]
+            best_thresholds.append(best_thr)
+        else:
+            # Fallback for rare/missing classes in test set
+            metrics[f'AUC_{class_name}'] = 0.5
+            best_thresholds.append(0.5)
+            
+    metrics['Mean_AUC'] = np.mean(auc_list) if auc_list else 0.5
+    metrics['Best_Thresholds'] = best_thresholds
+    return metrics
 
 def plot_auc_bar(metrics, class_names):
     """Generates a bar chart for per-class AUC-ROC performance."""
@@ -52,70 +82,90 @@ def plot_pr_curves(all_labels, all_preds, class_names):
     plt.show()
 
 def main():
-    # --- CONFIGURATION ---
+    # --- 1. CONFIGURATION ---
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    MODEL_PATH = "best_medvit_model.pth"
+    MODEL_PATH = r"C:\Users\danny\OneDrive\Documents\UCSD\DSC288R\MedVIT\experiments\run_20260222-1412_MedViT_SOTA\best_medvit_model.pth"
     CSV_PATH = '../data/Data_Entry_2017.csv'
     IMAGE_ROOT = '../images'
-    IMAGE_FOLDERS = [os.path.join(IMAGE_ROOT, f"images_{str(i).zfill(3)}") for i in range(1, 13)]
-    SUBSET_SIZE = 120000
-    
-    # 1. Load Model
-    print(f"Loading best model from {MODEL_PATH}...")
+    IMAGE_FOLDERS = [os.path.join(IMAGE_ROOT, f"images_{str(i).zfill(3)}", "images") for i in range(1, 13)]
+
+    # --- 2. MODEL SETUP ---
+    print(f"Loading weights from {MODEL_PATH}...")
+
     checkpoint = torch.load(MODEL_PATH, map_location=DEVICE, weights_only=False)
-    class_names = checkpoint['class_names']
     
+    # 1. Extract Class Names
+    if 'class_names' in checkpoint:
+        class_names = checkpoint['class_names']
+        print(f"✅ Classes: {class_names}")
+    
+    # 2. Initialize Model Architecture
     model = OptimizedMedViT(num_classes=len(class_names)).to(DEVICE)
-    model.load_state_dict(checkpoint['state_dict'])
+
+    if 'state_dict' in checkpoint:
+        state_dict = checkpoint['state_dict']
+        print("💡 Found 'state_dict' key. Extracting weights...")
+    else:
+        state_dict = checkpoint
+        print("💡 Loading weights directly from checkpoint...")
+
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        name = k[7:] if k.startswith('module.') else k 
+        new_state_dict[name] = v
+
+    # 5. Load and Verify
+    msg = model.load_state_dict(new_state_dict, strict=False)
+    print(f"✅ Weights Loaded! Missing keys: {msg.missing_keys}")
+    
     model.eval()
 
-    # 2. Load Data (Using the new 4-value unpack)
-    print("Initializing Data Loaders...")
+    # --- 3. DATA LOADING ---
     df = pd.read_csv(CSV_PATH)
+    
+    # SAFETY CHECK 2: Ensure the GroupShuffleSplit uses the EXACT same seed/params as training
     _, _, test_loader, _ = get_loaders(
         df, 
         IMAGE_FOLDERS, 
-        batch_size=32, 
-        subset_size=SUBSET_SIZE
+        batch_size=32,
+        subset_size=None,
+        target_size=(448, 448)
     )
+    print(f"🚀 Loaded {len(test_loader.dataset)} test images.")
 
     all_labels = []
     all_preds = []
 
-    # 3. Evaluation on Test Set
-    print(f"Evaluating on {len(test_loader.dataset)} unseen images...")
+    # --- 4. EVALUATION ---
+    print(f"Running inference...")
     with torch.no_grad():
-        for batch in test_loader:
-            images = batch['image'].to(DEVICE)
-            meta = batch['meta'].to(DEVICE)
-            labels = batch['labels']
-            
-            outputs = model(images, meta)
-            preds = torch.sigmoid(outputs).cpu().numpy()
-            
-            all_labels.append(labels.numpy())
-            all_preds.append(preds)
+        with torch.amp.autocast(device_type='cuda'):
+            for batch in tqdm(test_loader):
+                images = batch['image'].to(DEVICE)
+                meta = batch['meta'].to(DEVICE)
+                labels = batch['labels']
+                
+                outputs = model(images, meta)
+                
+                # SAFETY CHECK 3: Check if outputs are NaNs or constants
+                preds = torch.sigmoid(outputs).cpu().numpy()
+                
+                all_labels.append(labels.numpy())
+                all_preds.append(preds)
 
     all_labels = np.vstack(all_labels)
     all_preds = np.vstack(all_preds)
 
-    # 4. Compute Metrics
+    # --- 5. THE "TRUTH" CHECK ---
     metrics = calculate_metrics(all_labels, all_preds, class_names)
-    
-    # Binary predictions for classification report (threshold = 0.5)
-    bin_preds = (all_preds > 0.5).astype(int)
+    print(f"\n✨ FINAL MEAN AUC: {metrics['Mean_AUC']:.4f}")
 
-    # 5. Output Results
-    print("\n" + "="*30)
-    print("FINAL TEST SET REPORT")
-    print("="*30)
-    print(f"Mean AUC: {metrics['Mean_AUC']:.4f}")
-    print("\nDetailed Per-Class Report:")
-    print(classification_report(all_labels, bin_preds, target_names=class_names, zero_division=0))
-
-    # 6. Generate Visuals
+    # Generate Visuals
     plot_auc_bar(metrics, class_names)
     plot_pr_curves(all_labels, all_preds, class_names)
+
+    # Print a small sample to see if the model is varying its guesses
+    print(f"Sample Preds (Class 0): {all_preds[:5, 0]}")
 
 if __name__ == "__main__":
     main()

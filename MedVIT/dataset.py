@@ -35,11 +35,16 @@ class ApplyCLAHE:
 # --- DATASET CLASS ---
 
 class NIH8Dataset(Dataset):
-    def __init__(self, csv_input, root_folders, subset_size=None, transform=None, cache_path="path_cache.json"):
+    def __init__(self, csv_input, root_folders, subset_size=None, transform=None, cache_path="path_cache.json", force_refresh=False):
+        # 0. Optional: Automate cache deletion
+        if force_refresh and os.path.exists(cache_path):
+            os.remove(cache_path)
+            print(f"Old cache deleted. Re-scanning {len(root_folders)} folders...")
+
         self.df = csv_input.copy() if not isinstance(csv_input, str) else pd.read_csv(csv_input)
         self.transform = transform
 
-        # 1. Path Indexing (Keep this as is, it's already optimized)
+        # 1. Path Indexing
         if os.path.exists(cache_path):
             with open(cache_path, 'r') as f:
                 self.path_map = json.load(f)
@@ -49,18 +54,28 @@ class NIH8Dataset(Dataset):
             with open(cache_path, 'w') as f:
                 json.dump(self.path_map, f)
 
-        # Sync and Label Processing
+        if subset_size is not None:
+            self.df = self.df.head(subset_size)
+
+        # 2. Sync and Label Processing
         self.df['Finding Labels'] = self.df['Finding Labels'].fillna('No Finding')
         self.df['Label_List'] = self.df['Finding Labels'].str.split('|')
-        self.mlb = MultiLabelBinarizer()
+        
+        # FIXED CLASSES: Ensures column 0 is always Atelectasis, column 1 is Cardiomegaly, etc.
+        self.classes = [
+            'Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Effusion',
+            'Emphysema', 'Fibrosis', 'Hernia', 'Infiltration', 'Mass', 'No Finding',
+            'Nodule', 'Pleural_Thickening', 'Pneumonia', 'Pneumothorax'
+        ]
+        self.mlb = MultiLabelBinarizer(classes=self.classes)
         
         # Only keep rows we actually have files for
         self.df = self.df[self.df['Image Index'].isin(self.path_map.keys())].reset_index(drop=True)
+        
+        # Fit the binarizer to our fixed classes
         self.label_matrix = self.mlb.fit_transform(self.df['Label_List'])
-        self.classes = self.mlb.classes_
 
-        # 2. VECTORIZATION STEP: Pre-calculate all metadata and labels into NumPy
-        # Doing this here saves massive amounts of time during the actual training loop
+        # 3. VECTORIZATION STEP
         self.view_arr = self.df['View Position'].map({'AP': 1, 'PA': 0}).fillna(0).values.astype(np.float32)
         self.age_arr = (np.clip(self.df['Patient Age'].values, 0, 100) / 100.0).astype(np.float32)
         self.gender_arr = self.df['Patient Gender'].map({'M': 1, 'F': 0}).fillna(0).values.astype(np.float32)
@@ -70,17 +85,18 @@ class NIH8Dataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        # FAST INDEXING: No more .iloc here
         img_name = self.image_names[idx]
         full_path = self.path_map[img_name]
         
         # Image Loading
         image = cv2.imread(full_path, cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            image = np.zeros((1024, 1024), dtype=np.uint8)
+            
         image = Image.fromarray(image)
         if self.transform:
             image = self.transform(image)
             
-        # Fast Metadata assembly from pre-calculated arrays
         meta_tensor = torch.tensor([
             self.view_arr[idx], 
             self.age_arr[idx], 
@@ -94,7 +110,15 @@ class NIH8Dataset(Dataset):
         }
 
 def calculate_class_weights(dataset):
-    pos_counts = np.sum(dataset.label_matrix, axis=0)
-    total_samples = len(dataset)
-    class_weights = np.sqrt((total_samples - pos_counts) / (pos_counts + 1e-6))
-    return torch.tensor(class_weights, dtype=torch.float32)
+    # Use the pre-calculated label_matrix instead of trying to index the dataframe
+    labels = dataset.label_matrix 
+    
+    # Sum the columns to get positive counts for each class
+    pos_counts = labels.sum(axis=0)
+    neg_counts = len(labels) - pos_counts
+    
+    # Formula: pos_weight = negative_counts / positive_counts
+    # High weight for rare diseases, low weight for common ones
+    weights = neg_counts / (pos_counts + 1e-6)
+    
+    return torch.tensor(weights, dtype=torch.float32)

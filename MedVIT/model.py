@@ -14,7 +14,7 @@ class MetaGatedInference(nn.Module):
         )
 
     def forward(self, img_feats, meta_feats):
-        # The metadata learned mask scales the image features element-wise
+        # Element-wise scaling
         return img_feats * self.gate(meta_feats)
 
 class OptimizedMedViT(nn.Module):
@@ -22,21 +22,24 @@ class OptimizedMedViT(nn.Module):
         super().__init__()
         
         # 1. Image Backbone (MaxViT)
-        # in_chans=1 because NIH images are grayscale
+        # Using maxvit_tiny_tf_224. It handles flexible resolutions 
+        # (like 320) due to relative position biases.
         self.backbone = timm.create_model('maxvit_tiny_tf_224', pretrained=True, in_chans=1)
         self.img_dim = self.backbone.num_features
         self.backbone.reset_classifier(0) 
 
+        # New: Explicit Global Average Pooling to handle resolution changes safely
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+
         # 2. Metadata Encoder
-        # Using LayerNorm instead of BatchNorm1d for stability with small batches
         self.meta_encoder = nn.Sequential(
             nn.Linear(metadata_dim, 64),
             nn.LayerNorm(64), 
             nn.ReLU(),
-            nn.Dropout(0.1) # Added slight dropout for regularization
+            nn.Dropout(0.2) # Bumped to 0.2 for better regularization
         )
         
-        # 3. Gating logic (Late Fusion)
+        # 3. Gating logic
         self.gating_unit = MetaGatedInference(self.img_dim, 64)
         
         # 4. Final Classification Head
@@ -46,13 +49,19 @@ class OptimizedMedViT(nn.Module):
         )
 
     def forward(self, x, meta_data):
-        # x shape: [batch, 1, 224, 224]
-        # meta_data shape: [batch, 3]
         
-        img_feats = self.backbone(x)     # [batch, img_dim]
-        meta_feats = self.meta_encoder(meta_data) # [batch, 64]
+        # Get backbone features
+        img_feats = self.backbone.forward_features(x) 
         
-        # Apply gating: metadata weights the importance of image features
+        # If the backbone returns a spatial map [B, C, H, W], flatten it
+        if len(img_feats.shape) == 4:
+            img_feats = self.global_pool(img_feats).flatten(1)
+        elif len(img_feats.shape) == 3: # Some ViTs return [B, L, C]
+            img_feats = img_feats.mean(dim=1)
+            
+        meta_feats = self.meta_encoder(meta_data)
+        
+        # Apply gating
         fused_feats = self.gating_unit(img_feats, meta_feats)
         
         return self.classifier(fused_feats)
