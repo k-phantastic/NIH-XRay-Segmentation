@@ -34,19 +34,72 @@
     </button>
 
     <!-- Reset View (Intended for exposure/contrast changes)-->
-    <button class="tool-btn" data-tool="reset" title="Reset View">
+    <button class="tool-btn" data-tool="reset" title="Reset View" id="resetToolBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
       </svg>
       <span class="tooltip">Reset View</span>
     </button>
 
+    <!-- Exposure / Contrast -->
+    <button class="tool-btn" data-tool="adjust" title="Adjust Image" id="adjustToolBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+      </svg>
+      <span class="tooltip">Adjust Image</span>
+    </button>
+
     <!-- Model Options -->
-    <button class="tool-btn" data-tool="model" title="Select Model">
-      <span class="model-names">ResNet-50</span>
+    <button class="tool-btn" data-tool="model" title="Select Model" id="modelToolBtn">
+      <span class="model-names" id="modelBtnLabel">Model</span>
       <span class="tooltip">Select Model</span>
     </button>
 </aside>
+
+  <!-- =====================================================
+       IMAGE ADJUSTMENT PANEL (anchored to toolbar)
+       ===================================================== -->
+  <div class="adjust-panel" id="adjustPanel">
+    <div class="adjust-panel-title">Image Adjustment</div>
+
+    <div class="adjust-row">
+      <span class="adjust-label">Exposure</span>
+      <input type="range" class="adjust-slider" id="sliderExposure"
+             min="0" max="200" value="100" step="1">
+      <span class="adjust-val" id="valExposure">100</span>
+    </div>
+
+    <div class="adjust-row">
+      <span class="adjust-label">Contrast</span>
+      <input type="range" class="adjust-slider" id="sliderContrast"
+             min="0" max="200" value="100" step="1">
+      <span class="adjust-val" id="valContrast">100</span>
+    </div>
+
+    <button class="adjust-reset-btn" id="adjustResetBtn">Reset</button>
+  </div>
+
+  <!-- =====================================================
+       MODEL SELECTOR POPUP (anchored to toolbar)
+       ===================================================== -->
+  <div class="model-popup" id="modelPopup">
+    <div class="model-popup-title">Select Model</div>
+    <button class="model-option active" data-model="ResNet50">
+      <span class="model-option-name">ResNet-50</span>
+      <span class="model-option-sub">Residual network</span>
+    </button>
+    <button class="model-option" data-model="DenseNet121">
+      <span class="model-option-name">DenseNet-121</span>
+      <span class="model-option-sub">Dense skip connections</span>
+    </button>
+    <button class="model-option" data-model="MaxViT">
+      <span class="model-option-name">MaxViT</span>
+      <span class="model-option-sub">Vision transformer + metadata</span>
+    </button>
+  </div>
+
+
 
 
   <!-- ==========================================================
@@ -117,6 +170,11 @@
     </div>
     <div class="viewport-overlay overlay-tr" id="overlayTR" style="display:none;">
       <div class="overlay-value" style="font-size:10px; color:rgba(200,211,224,0.5);" id="overlayDate">&mdash;</div>
+    </div>
+
+    <!-- Bottom-left: active model indicator -->
+    <div class="viewport-overlay overlay-bl" id="overlayBL">
+      <div><span class="overlay-label">Model </span><span class="overlay-value" id="overlayModel">ResNet-50</span></div>
     </div>
   </main>
 

@@ -610,3 +610,139 @@ html, body {
 
 /* Staggered finding card entrance */
 .finding-card                 { animation: fadeInUp 0.3s ease backwards; }
+
+/* -----------------------------------------------------------
+   ADDITIONS: Model popup, adjustment panel, disclaimer bar,
+   spin-ring keyframe, fadeInUp keyframe
+   ----------------------------------------------------------- */
+
+@keyframes spin-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ------- Model selector popup ------- */
+.model-popup {
+  position: fixed;
+  left: 64px;
+  top: 168px;
+  width: 220px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  display: none;
+}
+.model-popup.open { display: block; animation: fadeInUp 0.15s ease; }
+
+.model-popup-title {
+  font: 600 10px var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 6px;
+}
+
+.model-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  gap: 2px;
+}
+.model-option:hover { background: var(--bg-hover); border-color: var(--border-primary); }
+.model-option.active { background: var(--accent-teal-dim); border-color: var(--accent-teal); }
+.model-option-name { font: 500 12px var(--font-sans); color: var(--text-primary); }
+.model-option.active .model-option-name { color: var(--accent-teal); }
+.model-option-sub { font: 400 10px var(--font-mono); color: var(--text-muted); }
+
+/* ------- Image adjustment panel ------- */
+.adjust-panel {
+  position: fixed;
+  left: 64px;
+  top: 120px;
+  width: 240px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  display: none;
+}
+.adjust-panel.open { display: block; animation: fadeInUp 0.15s ease; }
+
+.adjust-panel-title {
+  font: 600 10px var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.adjust-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.adjust-label { font: 400 11px var(--font-sans); color: var(--text-secondary); width: 62px; flex-shrink: 0; }
+
+.adjust-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: var(--border-accent);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.adjust-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 6px rgba(0, 178, 186, 0.4);
+}
+.adjust-val { font: 500 10px var(--font-mono); color: var(--text-muted); width: 28px; text-align: right; }
+
+.adjust-reset-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 0;
+  background: none;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font: 500 11px var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.adjust-reset-btn:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+
+/* ------- Disclaimer bar ------- */
+.disclaimer-bar {
+  font: 400 11px var(--font-sans);
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 8px 10px;
+  border: 1px solid var(--border-primary);
+  border-left: 3px solid var(--accent-amber);
+  border-radius: var(--radius-sm);
+  background: rgba(240, 160, 48, 0.04);
+}

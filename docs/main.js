@@ -34,8 +34,13 @@ const CONFIG = {
    ----------------------------------------------------------- */
 
 let currentImageFile = null;   // File object of the active image
-let currentImageObj  = null;   // HTMLImageElement of the active image 
-let uploadedImages   = [];     // Array of { file, img, id } for the series list 
+let currentImageObj = null;   // HTMLImageElement of the active image 
+let uploadedImages = [];     // Array of { file, img, id } for the series list 
+let selectedModel = 'ResNet50';  // Must match key in app.py MODEL_CONFIGS
+
+// Image adjustment values (CSS filter percentages for slider)
+let exposure = 100;
+let contrast = 100;
 
 /* -----------------------------------------------------------
    3. DOM REFERENCES
@@ -108,14 +113,13 @@ function handleFile(file) {
       currentImageObj = img;
 
       // Dimensional metadata
-      $('infoDimensions').textContent  = `${img.naturalWidth} X ${img.naturalHeight}`;
+      $('infoDimensions').textContent = `${img.naturalWidth} X ${img.naturalHeight}`;
       $('overlayFilename').textContent = file.name;
-      $('overlayMeta').textContent     = `${img.naturalWidth} X ${img.naturalHeight}, ${formatBytes(file.size)}`;
-      $('overlayDate').textContent     = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      $('overlayMeta').textContent = `${img.naturalWidth} X ${img.naturalHeight}, ${formatBytes(file.size)}`;
+      $('overlayDate').textContent = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
       // Show overlays
-      ['overlayTL', 'overlayTR']
-        .forEach((id) => $(id).style.display = '');
+      ['overlayTL', 'overlayTR'].forEach((id) => $(id).style.display = '');
 
       addToSeriesList(file, img);
       drawImageOnCanvas(img);
@@ -211,6 +215,8 @@ function drawImageOnCanvas(img) {
   ctx.textAlign = 'center';
   ctx.fillText('R', 24, h / 2);
   ctx.fillText('L', w - 24, h / 2);
+
+  applyCanvasFilter(); // Exposure and contrast adjustments
 }
 
 function drawPlaceholderCanvas() {
@@ -222,6 +228,34 @@ function drawPlaceholderCanvas() {
   ctx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 }
 
+function applyCanvasFilter() {
+  mainCanvas.style.filter = `brightness(${exposure}%) contrast(${contrast}%)`;
+}
+
+function resetAdjustments() {
+  exposure = 100;
+  contrast = 100;
+  $('sliderExposure').value = 100;
+  $('sliderContrast').value = 100;
+  $('valExposure').textContent = '100';
+  $('valContrast').textContent = '100';
+  applyCanvasFilter();
+}
+
+$('sliderExposure').addEventListener('input', (e) => {
+  exposure = parseInt(e.target.value);
+  $('valExposure').textContent = exposure;
+  applyCanvasFilter();
+});
+
+$('sliderContrast').addEventListener('input', (e) => {
+  contrast = parseInt(e.target.value);
+  $('valContrast').textContent = contrast;
+  applyCanvasFilter();
+});
+
+$('adjustResetBtn').addEventListener('click', resetAdjustments);
+
 /* -----------------------------------------------------------
    8. INFERENCE ENGINE
    ----------------------------------------------------------- */
@@ -229,8 +263,8 @@ function drawPlaceholderCanvas() {
 async function runInference(file) {
   showSpinner('Running inference...');
   $('infoStatus').textContent = 'Running...';
-  hfBadge.textContent         = 'ANALYZING...';
-  hfBadge.className           = 'header-badge running';
+  hfBadge.textContent = 'ANALYZING...';
+  hfBadge.className = 'header-badge running';
 
   // Auto-switch to findings tab
   switchToTab('findings');
@@ -258,9 +292,9 @@ const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
  * Calls the Hugging Face Gradio Space API (v4+ / v5 format).
  *
  * Modern Gradio uses a three-step flow:
- *   1. POST file to /gradio_api/upload → get temp file ref
- *   2. POST to /call/predict with file ref → get event_id
- *   3. GET /call/predict/{event_id} → stream/read result
+ *   1. POST file to /gradio_api/upload --> get temp file ref
+ *   2. POST to /call/predict with file ref --> get event_id
+ *   3. GET /call/predict/{event_id} --> stream/read result
  */
 async function callHuggingFaceAPI(file) {
   const base = CONFIG.hfSpaceUrl;
@@ -286,61 +320,52 @@ async function callHuggingFaceAPI(file) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      data: [{ path: filePath, meta: { _type: 'gradio.FileData' } }],
+      data: [
+        { path: filePath, meta: { _type: 'gradio.FileData' } },  
+        selectedModel,                                             
+      ],
     }),
   });
-  if (!callRes.ok) {
-    throw new Error(`Predict call failed (${callRes.status}). Check Space logs.`);
-  }
+  if (!callRes.ok) throw new Error(`Predict call failed (${callRes.status}). Check Space logs.`);
 
   const { event_id } = await callRes.json();
   if (!event_id) throw new Error('No event_id returned from /call/predict');
 
-  // Step 3: Stream the result via SSE (Server-Sent Events)
+  // Step 3: Stream result
   const resultRes = await fetch(`${base}/gradio_api/call/predict/${event_id}`);
-  if (!resultRes.ok) {
-    throw new Error(`Result fetch failed (${resultRes.status}).`);
+  if (!resultRes.ok) throw new Error(`Result fetch failed (${resultRes.status}).`);
+
+  const text  = await resultRes.text();
+  const lines = text.split('\n');
+
+  // Check for error event first
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('event: error')) {
+      const dataLine = lines[i + 1];
+      if (dataLine?.startsWith('data: ')) {
+        throw new Error(`Space error: ${JSON.parse(dataLine.slice(6))}`);
+      }
+    }
   }
 
-  const text = await resultRes.text();
-
-  // Parse the SSE stream - look for the "complete" event's data line
-  const lines = text.split('\n');
+  // Parse complete event
   let resultData = null;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].startsWith('event: complete')) {
-      // The data line follows immediately
       const dataLine = lines[i + 1];
-      if (dataLine && dataLine.startsWith('data: ')) {
+      if (dataLine?.startsWith('data: ')) {
         resultData = JSON.parse(dataLine.slice(6));
         break;
       }
     }
   }
 
-  // Check for errors in the stream
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith('event: error')) {
-      const dataLine = lines[i + 1];
-      if (dataLine && dataLine.startsWith('data: ')) {
-        const errMsg = JSON.parse(dataLine.slice(6));
-        throw new Error(`Space error: ${errMsg}`);
-      }
-    }
-  }
-
-  if (!resultData || !resultData[0]) {
-    throw new Error('Unexpected response format - no data in stream');
-  }
+  if (!resultData || !resultData[0]) throw new Error('Unexpected response format - no data in stream');
 
   const labelData = resultData[0];
 
-  // Gradio Label returns { label, confidences: [{label, confidence}] }
   if (labelData.confidences) {
-    return labelData.confidences.map((c) => ({
-      label: c.label,
-      score: c.confidence,
-    }));
+    return labelData.confidences.map((c) => ({ label: c.label, score: c.confidence }));
   } else if (typeof labelData === 'object') {
     return Object.entries(labelData)
       .map(([label, score]) => ({ label, score }))
@@ -349,6 +374,7 @@ async function callHuggingFaceAPI(file) {
 
   throw new Error('Could not parse model predictions');
 }
+
 
 /* -----------------------------------------------------------
    9. FINDINGS RENDERER
@@ -418,8 +444,76 @@ function switchToTab(tabName) {
    ----------------------------------------------------------- */
 
 // Reset View
-document.querySelector('[data-tool="reset"]').addEventListener('click', () => {
-  if (currentImageObj) drawImageOnCanvas(currentImageObj);
+$('resetToolBtn').addEventListener('click', () => {
+  if (currentImageObj) {
+    resetAdjustments();
+    drawImageOnCanvas(currentImageObj);
+  }
+});
+
+// Adjust panel toggle 
+const adjustPanel   = $('adjustPanel');
+const adjustToolBtn = $('adjustToolBtn');
+
+adjustToolBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = adjustPanel.classList.toggle('open');
+  adjustToolBtn.classList.toggle('active', isOpen);
+  // Close model popup if open
+  modelPopup.classList.remove('open');
+  modelToolBtn.classList.remove('active');
+});
+
+// Model popup toggle
+const modelPopup   = $('modelPopup');
+const modelToolBtn = $('modelToolBtn');
+
+modelToolBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = modelPopup.classList.toggle('open');
+  modelToolBtn.classList.toggle('active', isOpen);
+  // Close adjust panel if open
+  adjustPanel.classList.remove('open');
+  adjustToolBtn.classList.remove('active');
+});
+
+// --- Model option selection ---
+document.querySelectorAll('.model-option').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selectedModel = btn.dataset.model;
+
+    // Update active state
+    document.querySelectorAll('.model-option').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Update all model name displays
+    const displayName = btn.querySelector('.model-option-name').textContent;
+    const modelBtnLabel = $('modelBtnLabel');
+    if (modelBtnLabel) modelBtnLabel.textContent = displayName.split('-')[0].trim();
+    $('infoModel').textContent    = displayName;
+    $('overlayModel').textContent = displayName;
+
+    // Close popup
+    modelPopup.classList.remove('open');
+    modelToolBtn.classList.remove('active');
+
+    // Re-run inference on current image with new model
+    if (currentImageFile) {
+      runInference(currentImageFile);
+    }
+  });
+});
+
+// Close panels when clicking outside 
+document.addEventListener('click', (e) => {
+  if (!adjustPanel.contains(e.target) && e.target !== adjustToolBtn) {
+    adjustPanel.classList.remove('open');
+    adjustToolBtn.classList.remove('active');
+  }
+  if (!modelPopup.contains(e.target) && e.target !== modelToolBtn) {
+    modelPopup.classList.remove('open');
+    modelToolBtn.classList.remove('active');
+  }
 });
 
 /* -----------------------------------------------------------
