@@ -6,23 +6,24 @@ import numpy as np
 import pandas as pd
 import cv2
 from PIL import Image
-from sklearn.metrics import roc_auc_score
-
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score, accuracy_score
 import torch
 import torch.nn as nn
+import torchvision.models as models
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
-import torchvision.models as models
 from torch.cuda.amp import GradScaler, autocast # For Mixed Precision (Speed)
-
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # 1. CONFIGURATION
 Config = {
-    "CLUSTER_IMAGE_ROOT": "/Users/laythmarabeh/Documents/UCSD/288R/Data/archive/images", 
+    "CLUSTER_IMAGE_ROOT": "/Users/laythmarabeh/Documents/UCSD/288R/Data/archive/images", # CHANGE TO LOCAL DATA ROOT
     
-    "CSV_FILE": "Data_Entry_2017.csv",
-    "SPLIT_FILE": "train_val_list.txt",
+    "CSV_FILE": "../data/Data_Entry_2017.csv",
+    "SPLIT_FILE": "../data/train_val_list.txt",
     
     # Hyperparameters
     "IMG_SIZE": 224,
