@@ -10,6 +10,7 @@ import os
 from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score, accuracy_score
 import torch.nn.functional as F
 import cv2
+import seaborn as sns
 
 def calculate_class_weights(dataset, max_weight=10.0):
     """
@@ -315,27 +316,27 @@ def plot_training_history(checkpoint):
     checkpoint_epoch = checkpoint['epoch']
 
     total_epochs  = range(1, len(history['train_loss']) + 1)
-
+    sns.set_theme(style="whitegrid") # match the densenet notebook
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-    ax1.plot(total_epochs, history['train_loss'], label='Train Loss')
-    ax1.plot(total_epochs, history['val_loss'],   label='Val Loss')
+    ax1.plot(total_epochs, history['train_loss'], label='Train Loss', marker='o')
+    ax1.plot(total_epochs, history['val_loss'],   label='Val Loss', marker='o')
     ax1.set_xlabel('Epoch')
-    ax1.set_ylabel('Loss')
-    ax1.set_title('Loss vs Epoch')
+    ax1.set_ylabel('BCE Loss')
+    ax1.set_title('Model Loss Over Epochs', fontsize=14, fontweight='bold')
     ax1.set_xticks(total_epochs)
     ax1.legend()
     ax1.grid(alpha=0.3)
 
-    ax2.plot(total_epochs, history['mean_auc'], label='Val AUC', color='green')
+    ax2.plot(total_epochs, history['mean_auc'], label='Val AUC', color='green', marker='o')
     ax2.set_xlabel('Epoch')
-    ax2.set_ylabel('AUC')
-    ax2.set_title('Validation AUC vs Epoch')
+    ax2.set_ylabel('Mean AUC')
+    ax2.set_title('Model Performance (Mean AUC)', fontsize=14, fontweight='bold')
     ax2.set_xticks(total_epochs)
     ax2.legend()
     ax2.grid(alpha=0.3)
 
-    plt.suptitle(f"Training History - Best AUC: {best_auc:.4f} (Epoch {checkpoint_epoch+1})", fontsize=13)
+    plt.suptitle(f"Training History - Best AUC: {best_auc:.4f} (Epoch {checkpoint_epoch+1})", fontsize=14, fontweight='bold')
     plt.tight_layout()
     plt.show()
 
@@ -406,6 +407,7 @@ def overlay_heatmap(heatmap, original_img_np):
     Overlays the heatmap on a grayscale image (BGR format for CV2).
     """
     heatmap_resized = cv2.resize(heatmap, (original_img_np.shape[1], original_img_np.shape[0]))
+    heatmap_resized = cv2.GaussianBlur(heatmap_resized, (15, 15), 0)
     heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
     
     # Convert grayscale original to BGR for blending
@@ -416,7 +418,7 @@ def overlay_heatmap(heatmap, original_img_np):
 
     return superimposed
 
-def visualize_gradcam(model, val_ds, train_ds, device, n_samples=5):
+def visualize_gradcam(model, val_ds, train_ds, target_layer, device, n_samples=5):
     """
     Generates Grad-CAM heatmap visualizations for one image per pathology.
 
@@ -438,9 +440,6 @@ def visualize_gradcam(model, val_ds, train_ds, device, n_samples=5):
     - n_samples: Number of images to visualize (default 5).
     """
     model.eval()
-
-    # Attach Grad-CAM to the last residual block - this layer has the best
-    target_layer = model.layer4[-1]
     cam = GradCAM(model, target_layer)
 
     # Sample one image per unique pathology from the validation set.
@@ -510,17 +509,17 @@ def visualize_gradcam(model, val_ds, train_ds, device, n_samples=5):
 
         # Panel 1 - original X-ray with ground truth
         axes[i, 0].imshow(img_np, cmap="gray")
-        axes[i, 0].set_title(f"Ground Truth: {', '.join(gt_labels)}", fontsize=9)
+        axes[i, 0].set_title(f"Ground Truth: {', '.join(gt_labels)}", fontsize=14)
         axes[i, 0].axis("off") # Remove axes for cleaner look
 
         # Panel 2 - raw heatmap for the top predicted class
         axes[i, 1].imshow(heatmap, cmap="jet")
-        axes[i, 1].set_title(f"Heatmap: {pred_name}", fontsize=9)
+        axes[i, 1].set_title(f"Grad-CAM Heatmap (Top Prediction: {pred_name})", fontsize=14)
         axes[i, 1].axis("off")
 
         # Panel 3 - heatmap overlaid on original image
         axes[i, 2].imshow(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
-        axes[i, 2].set_title(f"Overlay", fontsize=9)
+        axes[i, 2].set_title(f"Overlay", fontsize=14)
         axes[i, 2].axis("off")
 
         # Panel 4 - text: top 3 predictions + ground truth
