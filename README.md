@@ -16,7 +16,7 @@ This repository contains our capstone project in building a multi-label chest X-
 |---|---|---|---
 | DenseNet-121 (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
 | [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
-| MaxViT (modified) | Danny Xia | Vision transformer + metadata fusion | 224x224 
+| MedViT  | Danny Xia | Vision transformer + metadata fusion | 224x224 
 
 Each model was independently developed and trained; top to bottom being our intiially hypothesized worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
 
@@ -30,7 +30,7 @@ Root
 │   └── ...
 ├── ResNet50/                   # ResNet-50 training pipeline (Khanh)
 │   └── ...
-├── MaxVIT/                     # Optimized MaxViT pipeline (Danny)
+├── MedVIT/                     # Optimized MedViT pipeline (Danny)
 │   └── ...
 │
 ├── dataset_info/               # Supporting documentation (From Kaggle dataset)
@@ -112,7 +112,7 @@ Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is perform
 |---|---|
 | DenseNet-121 | [FILL] | 
 | ResNet-50 | 0.8162 |
-| MaxViT | 0.8167  |
+| MedViT | 0.8167  |
 
 See individual model README.md files for additional AUC breakdowns and hyperparameter details.
 
