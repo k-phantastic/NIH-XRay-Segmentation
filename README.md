@@ -120,10 +120,14 @@ See individual model README.md files for additional AUC breakdowns and hyperpara
 ## Frontend Draft
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
 
+
 Introducing TritoNapse- a ploy on UCSD's mascot and Fujifilm's X-ray analysis software, Synapse! As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
 
 **Input:** A frontal-view chest X-ray image (PNG or JPG)  
 **Output:** Predicted probabilities for each thoracic pathology (14 conditions + No Finding)
+
+#### *Figure 5: Demo of website* 
+![Demo](data/eda_plots/demo.gif)
 
 > This tool is a proof of concept built for research and educational purposes as part of our capstone study. **It is not intended for clinical dianosis of any kind,**
 
