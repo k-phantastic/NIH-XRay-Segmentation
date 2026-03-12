@@ -9,6 +9,7 @@ dataset_info
 # Ignore all CSVs EXCEPT the ones we need for the code to run
 *.csv
 !data/Data_Entry_2017.csv
+!data/BBox_List_2017.csv
 
 # --- SYSTEM & IDE ---
 .DS_Store
@@ -25,5 +26,4 @@ TeamGrades-Group18.txt
 
 # --- Used for HuggingFace Spaces ---
 ResNet50/checkpoints/
-classes.json
 classes.json
