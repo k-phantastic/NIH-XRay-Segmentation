@@ -20,7 +20,7 @@ import seaborn as sns
 
 # 1. CONFIGURATION
 Config = {
-    "CLUSTER_IMAGE_ROOT": "/Users/laythmarabeh/Documents/UCSD/288R/Data/archive/images", # CHANGE TO LOCAL DATA ROOT
+    "CLUSTER_IMAGE_ROOT": "IMAGE_FOLDER", # CHANGE TO LOCAL DATA ROOT
     
     "CSV_FILE": "../data/Data_Entry_2017.csv",
     "SPLIT_FILE": "../data/train_val_list.txt",
