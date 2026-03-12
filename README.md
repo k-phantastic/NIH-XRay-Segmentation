@@ -72,7 +72,10 @@ Further information on dependencies located in model's respective README.md file
 
 As overviewed in the [supplementary report](dataset_info/README_CHESTXRAY.pdf) from Kaggle, the dataset includes 112,120 frontal-view X-ray images of 30,805 patients, with text-mined disease labels. Each image is a 1024x1024 PNG file.
 
-![Pathology/Findings](data/eda_plots/findings.png)
+#### *Figure 1: Full class counts across all images* 
+<div style="text-align: center;">
+    ![Pathology/Findings](data/eda_plots/findings.png)
+</div>
 ---
 
 ## Exploratory Data Analysis
@@ -80,7 +83,20 @@ Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is perform
 
 >None of these notebooks are required to be ran for the setup, training, or evaluation of the models. 
 
-[space here for relevant plots]
+#### *Figure 2: View position distribution in full data set (AP vs PA)* 
+<div style="text-align: center;">
+    ![View Positions](data/eda_plots/view_position.png)
+</div>
+
+#### *Figure 3: Patient demographics as defined in `Data_Entry_2017.csv`* 
+<div style="text-align: center;">
+    ![Patient Demographics](data/eda_plots/demographics.png)
+</div>
+
+#### *Figure 4: Comorbidity matrix, showing few clear trends* 
+<div style="text-align: center;">
+    ![Matrix](data/eda_plots/comorbidities.png)
+</div>
 
 ---
 
