@@ -4,6 +4,7 @@ images_*/
 data/*.png
 data/*.jpg
 *.zip
+dataset_info
 
 # Ignore all CSVs EXCEPT the ones we need for the code to run
 *.csv
@@ -21,3 +22,7 @@ vh/
 env/
 .env
 TeamGrades-Group18.txt
+
+# --- Used for HuggingFace Spaces ---
+ResNet50/checkpoints/
+classes.json
