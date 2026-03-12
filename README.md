@@ -119,12 +119,40 @@ See individual model README.md files for additional AUC breakdowns and hyperpara
 --- 
 
 ## Frontend
+**HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
+
 As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
 
 **Input:** A frontal-view chest X-ray image (PNG or JPG)  
 **Output:** Predicted probabilities for up to 15 thoracic pathologies (14 conditions + No Finding)
 
-Deployment of the app is through HuggingFace Spaces and [gradio](https://www.gradio.app/). 
+>It is important to note that this tool created is purely for research and educational purposes only, and as a proof of concept of our application of deep learning for the identified problem at hand. **This is NOT intended for any official clinical diagnosis**.
+
+### Deployment 
+Each of the model checkpoints are loaded on HuggingFace Spaces with [gradio](https://www.gradio.app/). The website is able to make an API call to retrieve the pathology predictions. 
+
+Each model weights are loaded through each respective checkpoint file, which can be seen in the `model_checkpoints/` folder in the HuggingFace repository. 
+
+### Features
+Many features were storyboarded with assistance from LLM wrangling of the website's javascript. Current implementation in our early stage include: 
+| Feature | Description |
+|---|---|
+| **Image Viewer** | Shows the uploaded file as if performing X-ray diagnostics |
+| **Model Switcher** | Toolbar popup to switch between our three models, reruns inference upon selection |
+| **Findings Sidebar** | Per-pathology confidence predictions |
+| **Image Adjustment** | Exposure and contrast sliders using CSS `filter` (purely visual) |
+| **Series list** | Left sidebar tracking all uploaded images with thumbnails |
+| **File Info Panel** | Relevant file details/statistics |
+
+### Further Reach Features
+This type of tool, while useful in part of our data science lifestyle, should actually be subject to proper production planning and user testing. That being said, early improvements and desires are brainstormed as follows: 
+
+| Feature | Goal |
+|---|---|
+| **Heatmap** | Similar to Grad-CAM to see common areas of pathology  |
+| **Similar Patient Stats** | Method of showing anonymized patients with similar diagnosis for prognosis and planning of care |
+| **Annotation** | Further implementation like real X-ray software, with way to save file |
+| **Progression Animation** | Show change over time of patient's X-ray across multiple visits |
 
 ---
 
