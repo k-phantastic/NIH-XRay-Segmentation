@@ -64,7 +64,14 @@ Root
 
 Further information on dependencies located in model's respective README.md files. Each file utilizing the images contains setup for file paths if location differs from the recommended above. 
 
-[maybe blurb on a requirements.txt?]
+1. Upon cloning repository, install any remaining dependencies using our `requirements.txt`
+```bash
+pip install -r requirements.txt
+```
+Notably, an appropriate PyTorch version should be chosen relative to the system the training and inference is running on.
+
+2. Download the dataset from [Kaggle](https://www.kaggle.com/datasets/nih-chest-xrays/data) and organize the image folders under `images/` as recommended in the above Repository Structure section. 
+
 
 ---
 
