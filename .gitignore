@@ -26,3 +26,4 @@ TeamGrades-Group18.txt
 # --- Used for HuggingFace Spaces ---
 ResNet50/checkpoints/
 classes.json
+classes.json
