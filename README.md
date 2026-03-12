@@ -18,7 +18,7 @@ This repository contains our capstone project in building a multi-label chest X-
 | [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
 | MaxViT (modified) | Danny Xia | Vision transformer + metadata fusion | 224x224 
 
-Each model was independently developed and trained; top to bottom being our anticipated worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
+Each model was independently developed and trained; top to bottom being our intiially hypothesized worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
 
 ---
 
@@ -60,7 +60,7 @@ Root
 
 ## Setup
 
-Further information on dependencies located in model respective README.md files. Each file utilizing the images contains setup for file paths if location differs from the recommended above. 
+Further information on dependencies located in model's respective README.md files. Each file utilizing the images contains setup for file paths if location differs from the recommended above. 
 
 [maybe blurb on a requirements.txt?]
 
@@ -118,22 +118,22 @@ See individual model README.md files for additional AUC breakdowns and hyperpara
 
 --- 
 
-## Frontend
+## Frontend Draft
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
 
-As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
+Introducing TritoNapse- a ploy on UCSD's mascot and Fujifilm's X-ray analysis software, Synapse! As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
 
 **Input:** A frontal-view chest X-ray image (PNG or JPG)  
-**Output:** Predicted probabilities for up to 15 thoracic pathologies (14 conditions + No Finding)
+**Output:** Predicted probabilities for each thoracic pathology (14 conditions + No Finding)
 
->It is important to note that this tool created is purely for research and educational purposes only, and as a proof of concept of our application of deep learning for the identified problem at hand. **This is NOT intended for any official clinical diagnosis**.
+> This tool is a proof of concept built for research and educational purposes as part of our capstone study. **It is not intended for clinical dianosis of any kind,**
 
 ### Deployment 
 Each of the model checkpoints are loaded on HuggingFace Spaces with [gradio](https://www.gradio.app/). The website is able to make an API call to retrieve the pathology predictions. 
 
 Each model weights are loaded through each respective checkpoint file, which can be seen in the `model_checkpoints/` folder in the HuggingFace repository. 
 
-### Features
+### Current Features
 Many features were storyboarded with assistance from LLM wrangling of the website's javascript. Current implementation in our early stage include: 
 | Feature | Description |
 |---|---|
@@ -153,6 +153,8 @@ This type of tool, while useful in part of our data science lifestyle, should ac
 | **Similar Patient Stats** | Method of showing anonymized patients with similar diagnosis for prognosis and planning of care |
 | **Annotation** | Further implementation like real X-ray software, with way to save file |
 | **Progression Animation** | Show change over time of patient's X-ray across multiple visits |
+| **Agent/LLM** | Creation of alternative means to tie previous features |
+
 
 ---
 
