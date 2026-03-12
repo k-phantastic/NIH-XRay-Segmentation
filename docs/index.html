@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TritoNapse - CXR ML Models</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+<div class="app">
+
+  <!-- ==========================================================
+       LEFT TOOLBAR
+       Will want to add different model options here
+       ========================================================== -->
+  <aside class="toolbar">
+
+    <!-- Upload X-Ray -->
+    <button class="tool-btn" data-tool="upload" title="Upload Image" id="uploadToolBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <span class="tooltip">Upload X-Ray</span>
+    </button>
+
+    <!-- Reset View (Intended for exposure/contrast changes)-->
+    <button class="tool-btn" data-tool="reset" title="Reset View" id="resetToolBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+      </svg>
+      <span class="tooltip">Reset View</span>
+    </button>
+
+    <!-- Exposure / Contrast -->
+    <button class="tool-btn" data-tool="adjust" title="Adjust Image" id="adjustToolBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+      </svg>
+      <span class="tooltip">Adjust Image</span>
+    </button>
+
+    <!-- Model Options -->
+    <button class="tool-btn" data-tool="model" title="Select Model" id="modelToolBtn">
+      <span class="model-names" id="modelBtnLabel">Model</span>
+      <span class="tooltip">Select Model</span>
+    </button>
+</aside>
+
+  <!-- =====================================================
+       IMAGE ADJUSTMENT PANEL (anchored to toolbar)
+       ===================================================== -->
+  <div class="adjust-panel" id="adjustPanel">
+    <div class="adjust-panel-title">Image Adjustment</div>
+
+    <div class="adjust-row">
+      <span class="adjust-label">Exposure</span>
+      <input type="range" class="adjust-slider" id="sliderExposure"
+             min="0" max="200" value="100" step="1">
+      <span class="adjust-val" id="valExposure">100</span>
+    </div>
+
+    <div class="adjust-row">
+      <span class="adjust-label">Contrast</span>
+      <input type="range" class="adjust-slider" id="sliderContrast"
+             min="0" max="200" value="100" step="1">
+      <span class="adjust-val" id="valContrast">100</span>
+    </div>
+
+    <button class="adjust-reset-btn" id="adjustResetBtn">Reset</button>
+  </div>
+
+  <!-- =====================================================
+       MODEL SELECTOR POPUP (anchored to toolbar)
+       ===================================================== -->
+  <div class="model-popup" id="modelPopup">
+    <div class="model-popup-title">Select Model</div>
+    <button class="model-option active" data-model="ResNet50">
+      <span class="model-option-name">ResNet-50</span>
+      <span class="model-option-sub">Residual network</span>
+    </button>
+    <button class="model-option" data-model="DenseNet121">
+      <span class="model-option-name">DenseNet-121</span>
+      <span class="model-option-sub">Dense skip connections</span>
+    </button>
+    <button class="model-option" data-model="MaxViT">
+      <span class="model-option-name">MaxViT</span>
+      <span class="model-option-sub">Vision transformer + metadata</span>
+    </button>
+  </div>
+
+
+
+
+  <!-- ==========================================================
+       HEADER BAR
+       ========================================================== -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <!-- We should get a logo -->
+        TritoNapse
+      </div>
+      <nav class="header-nav">
+        <button class="active">Viewer</button>
+        <button>Similar Studies</button>
+        <button>About Us</button>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <span class="header-badge online" id="hfBadge">HF SPACE ONLINE</span>
+    </div>
+  </header>
+
+
+  <!-- ==========================================================
+       LEFT SIDEBAR (Includes uploaded series list)
+       ========================================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Uploaded</h3>
+      <span class="sidebar-count" id="seriesCount">0</span>
+    </div>
+    <div class="series-list" id="seriesList"></div>
+  </aside>
+
+
+  <!-- ==========================================================
+       MAIN VIEWPORT
+       ========================================================== -->
+  <main class="viewport" id="viewport">
+
+    <canvas class="viewport-canvas" id="mainCanvas"></canvas>
+
+    <!-- Upload dropzone -->
+    <div class="upload-overlay" id="uploadOverlay">
+      <div class="upload-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="upload-title">Upload Chest X-Ray</div>
+      <div class="upload-sub"><span>Browse Images</span> (PNG, JPG)</div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div class="inference-spinner" id="inferenceSpinner">
+      <div class="spin-ring"></div>
+      <div class="spinner-label" id="spinnerLabel">Running inference...</div>
+    </div>
+
+    <!-- DICOM-style corner overlays (hidden until image loaded) -->
+    <div class="viewport-overlay overlay-tl" id="overlayTL" style="display:none;">
+      <div><span class="overlay-label">Source</span></div>
+      <div class="overlay-value" id="overlayFilename">-</div>
+      <div class="overlay-value" style="font-size:10px; color:rgba(200,211,224,0.5);" id="overlayMeta">&mdash;</div>
+    </div>
+    <div class="viewport-overlay overlay-tr" id="overlayTR" style="display:none;">
+      <div class="overlay-value" style="font-size:10px; color:rgba(200,211,224,0.5);" id="overlayDate">&mdash;</div>
+    </div>
+
+    <!-- Bottom-left: active model indicator -->
+    <div class="viewport-overlay overlay-bl" id="overlayBL">
+      <div><span class="overlay-label">Model </span><span class="overlay-value" id="overlayModel">ResNet-50</span></div>
+    </div>
+  </main>
+
+
+  <!-- ==========================================================
+       RIGHT INFO PANEL
+       ========================================================== -->
+  <aside class="info-panel">
+    <div class="info-tabs">
+      <button class="info-tab" data-tab="findings">Model Findings</button>
+      <button class="info-tab active" data-tab="patient">File Info</button>
+      <button class="info-tab" data-tab="similar-patients">Similar Patients</button>
+    </div>
+
+    <div class="info-content">
+
+      <!-- FILE INFO TAB -->
+      <div class="tab-pane active" id="tab-patient">
+        <div class="info-section">
+          <div class="info-section-title">Image Details</div>
+          <div class="info-row"><span class="info-label">Filename</span><span class="info-value" id="infoFilename">-</span></div>
+          <div class="info-row"><span class="info-label">Dimensions</span><span class="info-value" id="infoDimensions">-</span></div>
+          <div class="info-row"><span class="info-label">File Size</span><span class="info-value" id="infoFileSize">-</span></div>
+          <div class="info-row"><span class="info-label">Type</span><span class="info-value" id="infoFileType">-</span></div>
+          <div class="info-row"><span class="info-label">Date Modified</span><span class="info-value" id="infoFileDate">-</span></div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title">Inference</div>
+          <div class="info-row"><span class="info-label">Model</span><span class="info-value" id="infoModel">ResNet-50</span></div>
+          <div class="info-row"><span class="info-label">Latency</span><span class="info-value" id="infoLatency">-</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="infoStatus">Idle</span></div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-title">Disclaimer</div>
+          <div class="disclaimer-bar">
+            This tool is for research and educational purposes only.
+            Not intended for clinical diagnosis.
+          </div>
+        </div>
+      </div>
+
+      <!-- MODEL FINDINGS TAB -->
+      <div class="tab-pane" id="tab-findings">
+        <div class="info-section">
+          <div class="info-section-title">Model Predictions</div>
+          <div id="findingsContainer">
+            <div style="text-align:center; padding:30px 0; color:var(--text-muted); font-size:12px;">
+              Upload an image to see findings determined by our trained models!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Similar Patients TAB -->
+      <div class="tab-pane" id="tab-similar-patients">
+        <div class="info-section">
+          <div class="info-section-title">Similar Patients</div>
+          <div id="similarPatientsContainer">
+            <div style="text-align:center; padding:30px 0; color:var(--text-muted); font-size:12px;">
+              Work in progress
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+
+  <!-- ==========================================================
+       STATUS BAR
+       ========================================================== -->
+  <footer class="statusbar">
+    <div class="statusbar-right">
+      <span id="credits">Brought to you by Layth Marabeh, Khanh Phan, and Danny Xia</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept="image/*,.dcm">
+
+<!-- JavaScript -->
+<script src="main.js"></script>
+
+</body>
+</html>
