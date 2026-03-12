@@ -1,8 +1,9 @@
 # NIH Chest X-Ray Classification 
-**Final Report:** link to final report here     
+**Final Report:** [PDF](final_report.pdf)     
 **Authors:** Layth Marabeh, Khanh Phan, Danny Xia       
 **Reach Project Demo:** https://khanhphan.com/NIH-XRay-Segmentation/        
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
+**Dataset Source:** https://www.kaggle.com/datasets/nih-chest-xrays/data
 
 ---
 
@@ -14,7 +15,7 @@ This repository contains our capstone project in building a multi-label chest X-
 
 | Model | Author | Architecture | Resolution 
 |---|---|---|---
-| DenseNet-121 (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
+| [DenseNet-121](Densenet/README.md) (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
 | [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
 | MedViT  | Danny Xia | Vision transformer + metadata fusion | 224x224 
 
@@ -109,7 +110,7 @@ Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is perform
 
 | Model | Best Macro AUC | 
 |---|---|
-| DenseNet-121 | [FILL] | 
+| DenseNet-121 | 0.8242 | 
 | ResNet-50 | 0.8162 |
 | MedViT | 0.8167  |
 
@@ -158,7 +159,3 @@ This type of tool, while useful in part of our data science lifestyle, should ac
 | **Progression Animation** | Show change over time of patient's X-ray across multiple visits |
 | **Agent/LLM** | Creation of alternative means to tie previous features |
 
-
----
-
-## References
