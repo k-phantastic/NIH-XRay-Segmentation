@@ -36,6 +36,8 @@ Root
 ├── dataset_info/               # Supporting documentation (From Kaggle dataset)
 │   └── ...
 ├── data/
+│   ├── eda_plots/              # Image folder for plot screenshots
+│   ├── BBox_List_2017.csv      # Bounding boxes (From Kaggle dataset)               
 │   └── Data_Entry_2017.csv     # Metadata file supporting all images (From Kaggle dataset)
 ├── images/                     # Directory setup for images (From Kaggle dataset)
 │   ├── images_001/
@@ -70,25 +72,7 @@ Further information on dependencies located in model's respective README.md file
 
 As overviewed in the [supplementary report](dataset_info/README_CHESTXRAY.pdf) from Kaggle, the dataset includes 112,120 frontal-view X-ray images of 30,805 patients, with text-mined disease labels. Each image is a 1024x1024 PNG file.
 
-Pathologies: (maybe replace this with eda?)
-* Atelectasis 
-* Consolidation
-* Infiltration
-* Pneumothorax
-* Edema
-* Emphysema
-* Fibrosis
-* Effusion
-* Pneumonia
-* Pleural Thickening
-* Cardiomegaly
-* Nodule
-* Mass
-* Hernia
-* No Finding (*)
-
-(*) "No Finding", while not necessarily a pathology, is a relevant label in our classification process. 
-
+![Pathology/Findings](data/eda_plots/findings.png)
 ---
 
 ## Exploratory Data Analysis
