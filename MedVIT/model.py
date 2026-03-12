@@ -28,7 +28,6 @@ class OptimizedMedViT(nn.Module):
         self.img_dim = self.backbone.num_features
         self.backbone.reset_classifier(0) 
 
-        # New: Explicit Global Average Pooling to handle resolution changes safely
         self.global_pool = nn.AdaptiveAvgPool2d(1)
 
         # 2. Metadata Encoder
@@ -36,7 +35,7 @@ class OptimizedMedViT(nn.Module):
             nn.Linear(metadata_dim, 64),
             nn.LayerNorm(64), 
             nn.ReLU(),
-            nn.Dropout(0.2) # Bumped to 0.2 for better regularization
+            nn.Dropout(0.2)
         )
         
         # 3. Gating logic

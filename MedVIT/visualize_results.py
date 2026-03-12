@@ -11,6 +11,7 @@ from data_loader import get_loaders
 from model import OptimizedMedViT
 from tqdm import tqdm
 from collections import OrderedDict
+import argparse
 
 def calculate_metrics(all_labels, all_preds, class_names):
     metrics = {}
@@ -83,8 +84,18 @@ def plot_pr_curves(all_labels, all_preds, class_names):
 
 def main():
     # --- 1. CONFIGURATION ---
+    parser = argparse.ArgumentParser(description="Evaluate MedViT Model")
+    parser.add_argument(
+        "--model_path", 
+        type=str, 
+        required=True,
+        help="Path to the .pth model checkpoint"
+    )
+    args = parser.parse_args()
+    
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    MODEL_PATH = r"C:\Users\danny\OneDrive\Documents\UCSD\DSC288R\MedVIT\experiments\run_20260222-1412_MedViT_SOTA\best_medvit_model.pth"
+    MODEL_PATH = args.model_path
+    OUTPUT_DIR = os.path.dirname(MODEL_PATH)
     CSV_PATH = '../data/Data_Entry_2017.csv'
     IMAGE_ROOT = '../images'
     IMAGE_FOLDERS = [os.path.join(IMAGE_ROOT, f"images_{str(i).zfill(3)}", "images") for i in range(1, 13)]
@@ -161,8 +172,12 @@ def main():
     print(f"\n✨ FINAL MEAN AUC: {metrics['Mean_AUC']:.4f}")
 
     # Generate Visuals
+    # 2. Use os.path.join to save into that folder
     plot_auc_bar(metrics, class_names)
+    plt.savefig(os.path.join(OUTPUT_DIR, 'test_set_auc_bar.png'))
+
     plot_pr_curves(all_labels, all_preds, class_names)
+    plt.savefig(os.path.join(OUTPUT_DIR, 'test_set_pr_curves.png'))
 
     # Print a small sample to see if the model is varying its guesses
     print(f"Sample Preds (Class 0): {all_preds[:5, 0]}")

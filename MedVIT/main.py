@@ -32,7 +32,6 @@ def main():
     # --- 1. HYPERPARAMETERS & CONFIG ---
     CSV_PATH = '../data/Data_Entry_2017.csv'
     IMAGE_ROOT = '../images'
-    # Added the extra "images" at the end to match your example path
     IMAGE_FOLDERS = [os.path.join(IMAGE_ROOT, f"images_{str(i).zfill(3)}", "images") for i in range(1, 13)]
     
     # Progressive Resizing Schedule

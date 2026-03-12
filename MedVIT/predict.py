@@ -104,6 +104,3 @@ def run_inference(img_path, age, gender, view, model_path):
     plt.savefig(save_filename, bbox_inches='tight', dpi=300)
     print(f"Result saved as {save_filename}")
     plt.show()
-
-# Example Usage:
-# run_inference('test_xray.png', 45, 'M', 'PA', 'best_medvit_model.pth')
