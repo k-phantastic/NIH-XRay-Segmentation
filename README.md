@@ -1,8 +1,9 @@
 # NIH Chest X-Ray Classification 
-**Final Report:** link to final report here     
+**Final Report:** [PDF](final_report.pdf)     
 **Authors:** Layth Marabeh, Khanh Phan, Danny Xia       
 **Reach Project Demo:** https://khanhphan.com/NIH-XRay-Segmentation/        
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
+**Dataset Source:** https://www.kaggle.com/datasets/nih-chest-xrays/data
 
 ---
 
@@ -14,9 +15,9 @@ This repository contains our capstone project in building a multi-label chest X-
 
 | Model | Author | Architecture | Resolution 
 |---|---|---|---
-| DenseNet-121 (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
+| [DenseNet-121](Densenet/README.md) (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
 | [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
-| MedViT  | Danny Xia | Vision transformer + metadata fusion | 224x224 
+| [MedViT](MedViT/README.md)  | Danny Xia | Vision transformer + metadata fusion | 448x448 
 
 Each model was independently developed and trained; top to bottom being our intiially hypothesized worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
 
@@ -36,6 +37,8 @@ Root
 ├── dataset_info/               # Supporting documentation (From Kaggle dataset)
 │   └── ...
 ├── data/
+│   ├── eda_plots/              # Image folder for plot screenshots
+│   ├── BBox_List_2017.csv      # Bounding boxes (From Kaggle dataset)               
 │   └── Data_Entry_2017.csv     # Metadata file supporting all images (From Kaggle dataset)
 ├── images/                     # Directory setup for images (From Kaggle dataset)
 │   ├── images_001/
@@ -62,7 +65,14 @@ Root
 
 Further information on dependencies located in model's respective README.md files. Each file utilizing the images contains setup for file paths if location differs from the recommended above. 
 
-[maybe blurb on a requirements.txt?]
+1. Upon cloning repository, install any remaining dependencies using our `requirements.txt`
+```bash
+pip install -r requirements.txt
+```
+Notably, an appropriate PyTorch version should be chosen relative to the system the training and inference is running on.
+
+2. Download the dataset from [Kaggle](https://www.kaggle.com/datasets/nih-chest-xrays/data) and organize the image folders under `images/` as recommended in the above Repository Structure section. 
+
 
 ---
 
@@ -70,25 +80,8 @@ Further information on dependencies located in model's respective README.md file
 
 As overviewed in the [supplementary report](dataset_info/README_CHESTXRAY.pdf) from Kaggle, the dataset includes 112,120 frontal-view X-ray images of 30,805 patients, with text-mined disease labels. Each image is a 1024x1024 PNG file.
 
-Pathologies: (maybe replace this with eda?)
-* Atelectasis 
-* Consolidation
-* Infiltration
-* Pneumothorax
-* Edema
-* Emphysema
-* Fibrosis
-* Effusion
-* Pneumonia
-* Pleural Thickening
-* Cardiomegaly
-* Nodule
-* Mass
-* Hernia
-* No Finding (*)
-
-(*) "No Finding", while not necessarily a pathology, is a relevant label in our classification process. 
-
+#### *Figure 1: Full class counts across all images* 
+![Pathology/Findings](data/eda_plots/findings.png)
 ---
 
 ## Exploratory Data Analysis
@@ -96,7 +89,14 @@ Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is perform
 
 >None of these notebooks are required to be ran for the setup, training, or evaluation of the models. 
 
-[space here for relevant plots]
+#### *Figure 2: View position distribution in full data set (AP vs PA)* 
+![View Positions](data/eda_plots/view_position.png)
+
+#### *Figure 3: Patient demographics as defined in `Data_Entry_2017.csv`* 
+![Patient Demographics](data/eda_plots/demographics.png)
+
+#### *Figure 4: Comorbidity matrix, showing few clear trends* 
+![Matrix](data/eda_plots/comorbidities.png)
 
 ---
 
@@ -110,7 +110,7 @@ Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is perform
 
 | Model | Best Macro AUC | 
 |---|---|
-| DenseNet-121 | [FILL] | 
+| DenseNet-121 | 0.8242 | 
 | ResNet-50 | 0.8162 |
 | MedViT | 0.8167  |
 
@@ -121,10 +121,14 @@ See individual model README.md files for additional AUC breakdowns and hyperpara
 ## Frontend Draft
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
 
+
 Introducing TritoNapse- a ploy on UCSD's mascot and Fujifilm's X-ray analysis software, Synapse! As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
 
 **Input:** A frontal-view chest X-ray image (PNG or JPG)  
 **Output:** Predicted probabilities for each thoracic pathology (14 conditions + No Finding)
+
+#### *Figure 5: Demo of website* 
+![Demo](data/eda_plots/demo.gif)
 
 > This tool is a proof of concept built for research and educational purposes as part of our capstone study. **It is not intended for clinical dianosis of any kind,**
 
@@ -155,7 +159,3 @@ This type of tool, while useful in part of our data science lifestyle, should ac
 | **Progression Animation** | Show change over time of patient's X-ray across multiple visits |
 | **Agent/LLM** | Creation of alternative means to tie previous features |
 
-
----
-
-## References
