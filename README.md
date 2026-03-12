@@ -10,18 +10,13 @@
 
 This repository contains our capstone project in building a multi-label chest X-ray pathology classification system that studies the setup for three different deep learning architectures on the [NIH Chest X-ray](https://www.kaggle.com/datasets/nih-chest-xrays/data) dataset from Kaggle. 
 
-As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
-
-**Input:** A frontal-view chest X-ray image (PNG or JPG)  
-**Output:** Predicted probabilities for up to 15 thoracic pathologies (14 conditions + No Finding)
-
 ### Models
 
 | Model | Author | Architecture | Resolution 
 |---|---|---|---
-| DenseNet-121 (baseline)| Layth Marabeh | CNN, dense connections | 224×224 
-| [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512×512 
-| MaxViT (modified) | Danny Xia | Vision transformer + metadata fusion | 224×224 
+| DenseNet-121 (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
+| [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
+| MaxViT (modified) | Danny Xia | Vision transformer + metadata fusion | 224x224 
 
 Each model was independently developed and trained; top to bottom being our anticipated worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
 
@@ -31,8 +26,33 @@ Each model was independently developed and trained; top to bottom being our anti
 
 ```
 Root
+├── Densenet/                   # DenseNet-121 training pipeline (Layth)
+│   └── ...
+├── ResNet50/                   # ResNet-50 training pipeline (Khanh)
+│   └── ...
+├── MaxVIT/                     # Optimized MaxViT pipeline (Danny)
+│   └── ...
 │
-├── ResNet50/                     # ResNet-50 training pipeline (Khanh)
+├── dataset_info/               # Supporting documentation (From Kaggle dataset)
+│   └── ...
+├── data/
+│   └── Data_Entry_2017.csv     # Metadata file supporting all images (From Kaggle dataset)
+├── images/                     # Directory setup for images (From Kaggle dataset)
+│   ├── images_001/
+│   │   └── images/
+│   │       └── *.png
+│   ├── images_002/
+│   ...
+│   └── images_012/
+│
+├── docs/                       # Frontend and supporting files
+│   ├── index.html              # Fujifilm Synapse inspired UI
+│   ├── style.css               
+│   └── main.js                 
+│
+├── metadata_eda.ipynb          # EDA: label distributions, demographics, bounding boxes
+├── data_loader.ipynb           # Vestige file: Used for setting up data_loader.py
+└── pipeline_check.ipynb        # Vestige file: Used for sanity check and testing paths
 
 ```
 
@@ -40,22 +60,72 @@ Root
 
 ## Setup
 
+Further information on dependencies located in model respective README.md files. Each file utilizing the images contains setup for file paths if location differs from the recommended above. 
+
+[maybe blurb on a requirements.txt?]
+
 ---
 
 ## Dataset
 
+As overviewed in the [supplementary report](dataset_info/README_CHESTXRAY.pdf) from Kaggle, the dataset includes 112,120 frontal-view X-ray images of 30,805 patients, with text-mined disease labels. Each image is a 1024x1024 PNG file.
+
+Pathologies: (maybe replace this with eda?)
+* Atelectasis 
+* Consolidation
+* Infiltration
+* Pneumothorax
+* Edema
+* Emphysema
+* Fibrosis
+* Effusion
+* Pneumonia
+* Pleural Thickening
+* Cardiomegaly
+* Nodule
+* Mass
+* Hernia
+* No Finding (*)
+
+(*) "No Finding", while not necessarily a pathology, is a relevant label in our classification process. 
+
 ---
 
 ## Exploratory Data Analysis
+Exploratory data analysis on the metadata file, `Data_Entry_2017.csv` is performed in `metadata_eda.ipynb`. Checking our understanding of from the EDA, our initial testing of loading the dataset as well as various transforms is performed through `data_loader.ipynb` and `pipeline_check.ipynb`. 
+
+>None of these notebooks are required to be ran for the setup, training, or evaluation of the models. 
+
+[space here for relevant plots]
 
 ---
 
-## Workflow
+## Modeling Workflow
+1. Set up images in appropriate directory (see example path setup above)
+2. Reference model README.md for detailed instruction on tuning, training, and evaluation
 
 ---
 
 ## Results
 
+| Model | Best Macro AUC | 
+|---|---|
+| DenseNet-121 | [FILL] | 
+| ResNet-50 | 0.8162 |
+| MaxViT | 0.8167  |
+
+See individual model README.md files for additional AUC breakdowns and hyperparameter details.
+
 --- 
+
+## Frontend
+As part of our reach goal in building an tangible UI for seeing different model inferences, we created a draft of an application that utilizes the completed trained weights to predict pathologies:
+
+**Input:** A frontal-view chest X-ray image (PNG or JPG)  
+**Output:** Predicted probabilities for up to 15 thoracic pathologies (14 conditions + No Finding)
+
+Deployment of the app is through HuggingFace Spaces and [gradio](https://www.gradio.app/). 
+
+---
 
 ## References
