@@ -2,7 +2,7 @@
 **Final Report:** [PDF](final_report.pdf)     
 **Authors:** Layth Marabeh, Khanh Phan, Danny Xia       
 **Reach Project Demo:** https://khanhphan.com/NIH-XRay-Segmentation/        
-**HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse
+**HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse        
 **Dataset Source:** https://www.kaggle.com/datasets/nih-chest-xrays/data
 
 ---
@@ -17,7 +17,7 @@ This repository contains our capstone project in building a multi-label chest X-
 |---|---|---|---
 | [DenseNet-121](Densenet/README.md) (baseline)| Layth Marabeh | CNN, dense connections | 224x224 
 | [ResNet-50](ResNet50/README.md) | Khanh Phan | CNN, residual skip connections | 512x512 
-| [MedViT](MedViT/README.md)  | Danny Xia | Vision transformer + metadata fusion | 448x448 
+| [MedViT](MedVIT/README.md)  | Danny Xia | Vision transformer + metadata fusion | 448x448 
 
 Each model was independently developed and trained; top to bottom being our intiially hypothesized worst to best in performance. All share similar image preprocessing and patient stratified validation/test set methodologies. 
 

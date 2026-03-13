@@ -73,13 +73,13 @@ IMAGE_FOLDERS = [ROOT_DIR.parent / "images"] # List of folders to search
 ---
 
 ## Execution Workflow
-### Hyperparameter Tuning
+### 1. Hyperparameter Tuning
 
 ```bash
 python tuning.py
 ```
 
-Hyperparameter tuning is performed using Optuna. Default settings were 20 trials at 5 proxy epochs per trial. Settings are located at the top of `tuning.py` to change this as well as the output file (default `best_params.json` outputted at current folder) for the best parameters. Completed parameters can be copied into `config.py`. Additional parameters can be studied using this framework, but with our current scope we found the following: 
+The model can be run naively and then tuned afterwards, but in the process of recreating our settings, `tuning.py` is used first. Hyperparameter tuning is performed using Optuna. Default settings were 20 trials at 5 proxy epochs per trial. Settings are located at the top of `tuning.py` to change this as well as the output file (default `best_params.json` outputted at current folder) for the best parameters. Completed parameters can be copied into `config.py`. Additional parameters can be studied using this framework, but with our current scope we found the following: 
 
 ```python 
 LEARNING_RATE = 5.6115164153345e-05
@@ -88,9 +88,14 @@ WEIGHT_DECAY = 0.000157029708840554
 MAX_CLASS_WEIGHT = 13.177194231349622
 ```
 
-### Full Dataset Loading and Training
-
 ---
+
+### 2. Full Dataset Loading and Training
+
+
+```bash
+python train_model.py # Set necessary settings via config.py
+```
 
 #### Preprocessing
 
@@ -110,9 +115,6 @@ Note that step 4 is not applied to the test/unknown data.
 ---
 
 #### Full Execution
-```bash
-python train_model.py
-```
 
 The data is fully loaded with the necessary functions for the model's training loop. We ensure a patient stratified split leveraging `GroupShuffleSplit`. As mentioned previously, the training is performed on torchvision's `models.resnet50(weights=models.ResNet50_Weights.DEFAULT)`. All necessary settings for `train_model.py` can be established through `config.py`.
 
@@ -125,7 +127,12 @@ Training proceeds for up to 30 epochs with early stopping (patience=5, delta=0.0
 
 We use `AdamW()` for our optimizer and `BCEWithLogitsLoss()` as our criterion loss function. 
 
-#### Result Aggregation
+---
+
+### 3. Evaluation and Visualizations
+
+> Key file: `resnet.ipynb`      
+
 Upon completion of training and obtaining a checkpoint file with the best results, `resnet.ipynb` can be ran to view final statistics and relevant visualizations for evaluation.
 
 Included in `utils.py` is a setup for Grad-CAM (Gradient Class Activation Mapping) to help see regions of the X-ray input that the model is most influenced by.
