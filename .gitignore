@@ -19,6 +19,7 @@ __pycache__/
 
 # --- MODELS & ENV ---
 *.pth
+!Densenet/densenet_best.pth
 checkpoint.pth
 best_medvit_model.pth
 *.pth.tar
@@ -30,3 +31,4 @@ TeamGrades-Group18.txt
 # --- Used for HuggingFace Spaces ---
 ResNet50/checkpoints/
 classes.json
+Densenet/densenet-121.py

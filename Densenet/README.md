@@ -60,7 +60,7 @@ Additional confirmation can be established in the first configuration cell of th
 
 ```python
 # 1. Config & Paths 
-IMAGE_ROOT = "/Users/laythmarabeh/Documents/UCSD/288R/Data/archive/images"
+IMAGE_ROOT = "../images"
 CSV_FILE = "../data/Data_Entry_2017.csv"
 SPLIT_FILE = "../data/train_val_list.txt"
 ```
