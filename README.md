@@ -1,5 +1,5 @@
 # NIH Chest X-Ray Classification 
-**Final Report:** [PDF](final_report.pdf)     
+**Final Report:** [PDF](18-Report.pdf)     
 **Authors:** Layth Marabeh, Khanh Phan, Danny Xia       
 **Reach Project Demo:** https://khanhphan.com/NIH-XRay-Segmentation/        
 **HuggingFace Space:** https://huggingface.co/spaces/k-phantastic/TritoNapse        
